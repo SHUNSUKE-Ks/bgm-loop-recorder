@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import { ChordSelectScreen, type SongOption } from "./screens/02_ChordSelect/ChordSelectScreen";
 import { BgmLoopRecorderScreen } from "./screens/40_MainGame/BgmLoopRecorder/ScreenRoot";
+import { TitleScreen } from "./screens/10_Title/TitleScreen";
 
 export default function App() {
   const songs: SongOption[] = [
@@ -41,7 +42,7 @@ export default function App() {
       colorB: "#fb7185"
     }
   ];
-  const [screen, setScreen] = createSignal<"select" | "score">("select");
+  const [screen, setScreen] = createSignal<"title" | "select" | "score">("title");
   const [selectedSong, setSelectedSong] = createSignal<SongOption>(songs[0]);
 
   const openScore = (song: SongOption) => {
@@ -49,9 +50,15 @@ export default function App() {
     setScreen("score");
   };
 
-  return screen() === "select" ? (
-    <ChordSelectScreen songs={songs} onSelect={openScore} />
-  ) : (
-    <BgmLoopRecorderScreen song={selectedSong()} onBack={() => setScreen("select")} />
-  );
+  const currentScreen = screen();
+
+  if (currentScreen === "title") {
+    return <TitleScreen onStart={() => setScreen("select")} />;
+  }
+
+  if (currentScreen === "select") {
+    return <ChordSelectScreen songs={songs} onSelect={openScore} />;
+  }
+
+  return <BgmLoopRecorderScreen song={selectedSong()} onBack={() => setScreen("select")} />;
 }

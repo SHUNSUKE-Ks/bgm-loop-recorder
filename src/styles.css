@@ -31,6 +31,64 @@ button {
   box-shadow: 0 24px 60px rgb(15 23 42 / 18%);
 }
 
+.title-shell {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  overflow: hidden;
+  border: 5px solid #111827;
+  border-radius: 38px 38px 0 0;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 18%);
+  padding: 28px;
+}
+
+.title-logo-wrap {
+  display: grid;
+  width: min(78vw, 320px);
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.title-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.title-content {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.title-content p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.title-content h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 44px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.title-content button {
+  min-width: 144px;
+  height: 46px;
+  border: 3px solid #111827;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
 .select-shell {
   border: 5px solid #0f172a;
   border-radius: 34px 34px 0 0;

@@ -10,9 +10,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "BGM Loop Recorder",
-        short_name: "BGM Recorder",
-        description: "GameCollection向けの短いループBGM録音モック",
+        name: "弐音",
+        short_name: "弐音",
+        description: "ゲーム制作用の短いループBGM録音アプリ",
         theme_color: "#111827",
         background_color: "#f8fafc",
         display: "standalone",

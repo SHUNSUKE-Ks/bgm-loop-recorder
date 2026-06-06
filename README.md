@@ -1,4 +1,4 @@
-# BGM Loop Recorder
+# 弐音
 
 GameCollection向けの短いループBGM制作アプリです。  
 現在はPhase 1として、`screen03_score` の状態駆動UIモックを実装しています。

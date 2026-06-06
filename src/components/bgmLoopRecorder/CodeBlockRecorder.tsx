@@ -9,7 +9,6 @@ type CodeBlockRecorderProps = {
   chords: string[];
   activeChord: number;
   lanes: Record<LaneId, RecLaneState>;
-  overdubTarget: LaneId | null;
   onRec: (laneId: LaneId) => void;
   onPlayLane: (laneId: LaneId) => void;
   onToggleTakeArmed: (laneId: LaneId, takeId: string) => void;
@@ -26,7 +25,7 @@ export function CodeBlockRecorder(props: CodeBlockRecorderProps) {
         onPlayLane={props.onPlayLane}
         onToggleTakeArmed={props.onToggleTakeArmed}
       />
-      <div class="grid h-[62px] grid-cols-[58px_1fr] items-center gap-2">
+      <div class="grid h-[52px] grid-cols-[58px_1fr] items-center gap-2">
         <input
           class="label-input"
           value={props.label}
@@ -48,9 +47,6 @@ export function CodeBlockRecorder(props: CodeBlockRecorderProps) {
         onPlayLane={props.onPlayLane}
         onToggleTakeArmed={props.onToggleTakeArmed}
       />
-      <div class="mt-1 text-right text-[11px] font-black text-slate-500">
-        OVERDUB: {props.overdubTarget ?? "none"}
-      </div>
     </section>
   );
 }

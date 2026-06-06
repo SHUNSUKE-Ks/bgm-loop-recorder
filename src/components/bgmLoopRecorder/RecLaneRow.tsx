@@ -12,7 +12,7 @@ type RecLaneRowProps = {
 
 export function RecLaneRow(props: RecLaneRowProps) {
   return (
-    <div class="grid h-[48px] grid-cols-[58px_1fr_76px] items-center gap-2">
+    <div class="grid h-[40px] grid-cols-[54px_1fr_64px] items-center gap-2">
       <button
         type="button"
         class="rec-button"

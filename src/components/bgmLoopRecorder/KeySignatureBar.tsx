@@ -7,15 +7,6 @@ type KeySignatureBarProps = {
 };
 
 export function KeySignatureBar(props: KeySignatureBarProps) {
-  const notePositions = [
-    { left: "2%", top: "44px" },
-    { left: "16%", top: "34px" },
-    { left: "30%", top: "24px" },
-    { left: "44%", top: "14px" },
-    { left: "58%", top: "34px" },
-    { left: "72%", top: "24px" },
-    { left: "86%", top: "14px" }
-  ];
   const keyAccidentalMap: Record<string, string[]> = {
     C: [],
     G: ["♯"],
@@ -44,11 +35,9 @@ export function KeySignatureBar(props: KeySignatureBarProps) {
           <span>{mark}</span>
         ))}
       </div>
-      <div class="score-note-staff">
-        {props.notes.map((note, index) => (
-          <span class="score-note" style={notePositions[index % notePositions.length]}>
-            {note}
-          </span>
+      <div class="score-note-line">
+        {props.notes.map((note) => (
+          <span class="score-note">{note}</span>
         ))}
       </div>
     </section>

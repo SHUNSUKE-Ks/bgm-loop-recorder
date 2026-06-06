@@ -17,6 +17,34 @@ export function BgmLoopRecorderScreen() {
   let playbackBeatStep = 0;
 
   const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
+  const noteAccidentalMap: Record<string, string[]> = {
+    C: ["C", "Dm", "Em", "F", "G", "Am", "Bm"],
+    G: ["G", "Am", "Bm", "C", "D", "Em", "F♯m"],
+    D: ["D", "Em", "F♯m", "G", "A", "Bm", "C♯m"],
+    A: ["A", "Bm", "C♯m", "D", "E", "F♯m", "G♯m"],
+    E: ["E", "F♯m", "G♯m", "A", "B", "C♯m", "D♯m"],
+    B: ["B", "C♯m", "D♯m", "E", "F♯", "G♯m", "A♯m"],
+    F: ["F", "Gm", "Am", "B♭", "C", "Dm", "Em"],
+    Bb: ["B♭", "Cm", "Dm", "E♭", "F", "Gm", "Am"],
+    Eb: ["E♭", "Fm", "Gm", "A♭", "B♭", "Cm", "Dm"],
+    Ab: ["A♭", "B♭m", "Cm", "D♭", "E♭", "Fm", "Gm"],
+    Db: ["D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m", "Cm"]
+  };
+
+  const keySignatureDisplayMap: Record<string, { clef: "treble"; accidentals: string[]; display: string }> = {
+    C: { clef: "treble", accidentals: [], display: "C natural" },
+    G: { clef: "treble", accidentals: ["F#"], display: "F#" },
+    D: { clef: "treble", accidentals: ["F#", "C#"], display: "F#, C#" },
+    A: { clef: "treble", accidentals: ["F#", "C#", "G#"], display: "F#, C#, G#" },
+    E: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#"], display: "F#, C#, G#, D#" },
+    B: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#", "A#"], display: "F#, C#, G#, D#, A#" },
+    F: { clef: "treble", accidentals: ["Bb"], display: "Bb" },
+    Bb: { clef: "treble", accidentals: ["Bb", "Eb"], display: "Bb, Eb" },
+    Eb: { clef: "treble", accidentals: ["Bb", "Eb", "Ab"], display: "Bb, Eb, Ab" },
+    Ab: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db"], display: "Bb, Eb, Ab, Db" },
+    Db: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db", "Gb"], display: "Bb, Eb, Ab, Db, Gb" }
+  };
+  const scoreNotes = () => noteAccidentalMap[state.key] ?? noteAccidentalMap.C;
 
   const clearTimers = () => {
     timers.forEach((timerId) => window.clearInterval(timerId));
@@ -159,6 +187,25 @@ export function BgmLoopRecorderScreen() {
     setBlocks(blockIndex, "label", value.trim() || `A${blockIndex + 1}`);
   };
 
+  const handleBpmChange = (bpm: number) => {
+    const wasPlaying = state.controlBar.playing && state.countIn.status === "idle";
+    setState("bpm", bpm);
+    if (state.countIn.status !== "idle") {
+      stopAll();
+      return;
+    }
+    if (wasPlaying) {
+      startBeatClock(activeBlockIndex());
+    }
+  };
+
+  const handleKeyChange = (keyName: string) => {
+    const keySignature = keySignatureDisplayMap[keyName] ?? keySignatureDisplayMap.C;
+    setState("key", keyName);
+    setState("keySignature", keySignature);
+    setState("availableNotes", "notes", noteAccidentalMap[keyName] ?? noteAccidentalMap.C);
+  };
+
   const handleAddCodeBlock = () => {
     const nextIndex = blocks.length;
     const block = structuredClone(blocks[0]);
@@ -187,6 +234,8 @@ export function BgmLoopRecorderScreen() {
             bpm={state.bpm}
             keyName={state.key}
             onBack={() => console.info("back to song list")}
+            onBpmChange={handleBpmChange}
+            onKeyChange={handleKeyChange}
           />
           <BpmLampControlBar
             repeat={state.controlBar.repeat}
@@ -202,7 +251,7 @@ export function BgmLoopRecorderScreen() {
             clef={state.keySignature.clef}
             accidentals={state.keySignature.accidentals}
             display={state.keySignature.display}
-            notes={state.availableNotes.notes}
+            notes={scoreNotes()}
           />
           <div class="codeblock-stack">
             <For each={blocks}>
@@ -213,7 +262,6 @@ export function BgmLoopRecorderScreen() {
                   chords={block.chords}
                   activeChord={block.activeChord}
                   lanes={block.lanes}
-                  overdubTarget={block.overdubTarget}
                   onRec={(laneId) => handleRec(index(), laneId)}
                   onPlayLane={(laneId) => handlePlayLane(index(), laneId)}
                   onToggleTakeArmed={(laneId) => handleToggleTakeArmed(index(), laneId)}

@@ -6,13 +6,23 @@ import { CodeBlockRecorder } from "../../../components/bgmLoopRecorder/CodeBlock
 import { CountInOverlay } from "../../../components/bgmLoopRecorder/CountInOverlay";
 import { HeaderSongBar } from "../../../components/bgmLoopRecorder/HeaderSongBar";
 import { KeySignatureBar } from "../../../components/bgmLoopRecorder/KeySignatureBar";
+import { WaveformEditPanel } from "../../../components/bgmLoopRecorder/WaveformEditPanel";
 import { beatDurationMs, initialScreen03State, nextTakeId } from "./screen03State";
 import type { LaneId, RecorderBlockState } from "./screen03Types";
+
+type WaveformSelection = {
+  blockIndex: number;
+  laneId: LaneId;
+  takeId: string;
+  start: number;
+  end: number;
+};
 
 export function BgmLoopRecorderScreen() {
   const [state, setState] = createStore(structuredClone(initialScreen03State));
   const [blocks, setBlocks] = createStore<RecorderBlockState[]>([structuredClone(initialScreen03State.recorderBlock)]);
   const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
+  const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
   const timers = new Set<number>();
   let playbackBeatStep = 0;
 
@@ -58,6 +68,7 @@ export function BgmLoopRecorderScreen() {
     clearTimers();
     setState("countIn", { currentBeat: 0, status: "idle" });
     setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
+    setWaveformSelection(null);
     setBlocks((block) => block.map((item) => ({
       ...item,
       activeChord: 0,
@@ -112,6 +123,8 @@ export function BgmLoopRecorderScreen() {
   const handlePlayLane = (blockIndex: number, laneId: LaneId) => {
     setActiveBlockIndex(blockIndex);
     const nextPlaying = !blocks[blockIndex].lanes[laneId].playing;
+    const takeId = blocks[blockIndex].lanes[laneId].takes[0];
+    setWaveformSelection(nextPlaying && takeId ? { blockIndex, laneId, takeId, start: 0, end: 100 } : null);
     setBlocks((block) => block.map((item, index) => ({
       ...item,
       lanes: {
@@ -225,6 +238,33 @@ export function BgmLoopRecorderScreen() {
     setActiveBlockIndex(nextIndex);
   };
 
+  const updateTrimStart = (value: number) => {
+    const selection = waveformSelection();
+    if (!selection) return;
+    setWaveformSelection({ ...selection, start: Math.min(value, selection.end - 5) });
+  };
+
+  const updateTrimEnd = (value: number) => {
+    const selection = waveformSelection();
+    if (!selection) return;
+    setWaveformSelection({ ...selection, end: Math.max(value, selection.start + 5) });
+  };
+
+  const autoTrimSilence = () => {
+    const selection = waveformSelection();
+    if (!selection) return;
+    setWaveformSelection({ ...selection, start: 8, end: 92 });
+  };
+
+  const deleteSelectedTake = () => {
+    const selection = waveformSelection();
+    if (!selection) return;
+    const takes = blocks[selection.blockIndex].lanes[selection.laneId].takes.filter((takeId) => takeId !== selection.takeId);
+    setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takes);
+    setBlocks(selection.blockIndex, "lanes", selection.laneId, "playing", false);
+    setWaveformSelection(null);
+  };
+
   return (
     <main class="min-h-screen bg-slate-100 text-slate-950">
       <div class="mx-auto flex min-h-screen w-full max-w-[520px] items-start justify-center px-3 py-5">
@@ -246,6 +286,16 @@ export function BgmLoopRecorderScreen() {
             onAllPlay={handleAllPlay}
             onStop={stopAll}
           />
+          {waveformSelection() && (
+            <WaveformEditPanel
+              selection={waveformSelection()!}
+              onPreview={() => handlePlayLane(waveformSelection()!.blockIndex, waveformSelection()!.laneId)}
+              onTrimStartChange={updateTrimStart}
+              onTrimEndChange={updateTrimEnd}
+              onAutoTrimSilence={autoTrimSilence}
+              onDelete={deleteSelectedTake}
+            />
+          )}
           <KeySignatureBar
             keyName={state.key}
             clef={state.keySignature.clef}

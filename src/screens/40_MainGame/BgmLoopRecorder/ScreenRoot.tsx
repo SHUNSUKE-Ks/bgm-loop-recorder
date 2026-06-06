@@ -122,6 +122,39 @@ export function BgmLoopRecorderScreen() {
     timers.add(timerId);
   };
 
+  const startSequenceBeatClock = () => {
+    clearTimers();
+    playbackBeatStep = 0;
+    setWaveformSelection(null);
+    setState("controlBar", "beatLamp", 1);
+    setState("controlBar", { playing: true, stopped: false });
+    setBlocks((block) => block.map((item) => ({ ...item, activeChord: 0 })));
+
+    const beatMs = beatDurationMs(state.bpm);
+    const timerId = window.setInterval(() => {
+      playbackBeatStep += 1;
+      const nextBeat = (playbackBeatStep % 4) + 1;
+      const blockSpan = 4 * blocks[0].chords.length;
+      const totalSpan = blockSpan * blocks.length;
+      const sequenceBeat = state.controlBar.repeat ? playbackBeatStep % totalSpan : playbackBeatStep;
+      const nextBlockIndex = Math.min(Math.floor(sequenceBeat / blockSpan), blocks.length - 1);
+      const nextChord = Math.floor((sequenceBeat % blockSpan) / 4);
+
+      if (!state.controlBar.repeat && playbackBeatStep >= totalSpan) {
+        stopAll();
+        return;
+      }
+
+      setActiveBlockIndex(nextBlockIndex);
+      setState("controlBar", "beatLamp", nextBeat);
+      setBlocks((block) => block.map((item, index) => ({
+        ...item,
+        activeChord: index === nextBlockIndex ? nextChord : 0
+      })));
+    }, beatMs);
+    timers.add(timerId);
+  };
+
   const startRecordingBeatClock = (blockIndex: number) => {
     playbackBeatStep = 0;
     setState("controlBar", "beatLamp", 1);
@@ -142,7 +175,7 @@ export function BgmLoopRecorderScreen() {
       stopAll();
       return;
     }
-    startBeatClock(activeBlockIndex());
+    startSequenceBeatClock();
   };
 
   const handlePlayLane = (blockIndex: number, laneId: LaneId) => {
@@ -226,7 +259,7 @@ export function BgmLoopRecorderScreen() {
       return;
     }
     if (wasPlaying) {
-      startBeatClock(activeBlockIndex());
+      startSequenceBeatClock();
     }
   };
 
@@ -252,7 +285,7 @@ export function BgmLoopRecorderScreen() {
     block.lanes.bottom.playing = false;
     block.lanes.bottom.armedPlayback = false;
     block.lanes.bottom.takes = [];
-    setBlocks(blocks.length, block);
+    setBlocks((items) => [...items, block]);
     setActiveBlockIndex(nextIndex);
   };
 

@@ -44,9 +44,6 @@ export function BpmLampControlBar(props: BpmLampControlBarProps) {
         >
           {props.playing ? "■" : "▶"}
         </button>
-        <button type="button" class="stop-label" onClick={props.onStop}>
-          STOP
-        </button>
       </div>
     </div>
   );

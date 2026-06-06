@@ -11,10 +11,8 @@ export function TitleScreen(props: TitleScreenProps) {
             <img src="/icon_512x512.png" alt="弐音" class="title-logo" />
           </div>
           <div class="title-content">
-            <p>Loop BGM Recorder</p>
-            <h1>弐音</h1>
             <button type="button" onClick={props.onStart}>
-              はじめる
+              はじまり
             </button>
           </div>
         </section>

@@ -45,7 +45,7 @@ button {
 
 .title-logo-wrap {
   display: grid;
-  width: min(78vw, 320px);
+  width: min(86vw, 356px);
   aspect-ratio: 1;
   place-items: center;
 }
@@ -59,23 +59,7 @@ button {
 .title-content {
   display: grid;
   justify-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.title-content p {
-  margin: 0;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.title-content h1 {
-  margin: 0;
-  color: #111827;
-  font-size: 44px;
-  font-weight: 1000;
-  line-height: 1;
+  margin-top: 18px;
 }
 
 .title-content button {

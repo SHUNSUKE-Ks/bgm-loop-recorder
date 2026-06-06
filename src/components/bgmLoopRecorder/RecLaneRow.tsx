@@ -33,7 +33,6 @@ export function RecLaneRow(props: RecLaneRowProps) {
             />
           )}
         </For>
-        <span class="wave-line" />
       </div>
       <button
         type="button"

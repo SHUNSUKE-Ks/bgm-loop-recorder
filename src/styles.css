@@ -223,7 +223,7 @@ button {
   position: absolute;
   left: 8px;
   right: 8px;
-  top: 174px;
+  top: 66px;
   z-index: 24;
   pointer-events: none;
 }
@@ -463,19 +463,6 @@ button {
   border-radius: 8px;
   background: #ffffff;
   padding: 0 8px;
-}
-
-.wave-line {
-  min-width: 120px;
-  height: 14px;
-  flex: 1 1 auto;
-  opacity: 0.62;
-  background:
-    linear-gradient(90deg, transparent 0 8px, #94a3b8 8px 10px, transparent 10px 18px),
-    linear-gradient(180deg, transparent 7px, #94a3b8 7px 10px, transparent 10px);
-  background-size:
-    18px 18px,
-    100% 18px;
 }
 
 .take-icon {

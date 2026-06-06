@@ -67,7 +67,7 @@ export function HeaderSongBar(props: HeaderSongBarProps) {
       <div class="mt-1 flex items-center gap-5">
         <button
           type="button"
-          class="icon-button h-9 w-9 text-3xl"
+          class="back-button"
           aria-label="戻る"
           title="戻る"
           onClick={props.onBack}

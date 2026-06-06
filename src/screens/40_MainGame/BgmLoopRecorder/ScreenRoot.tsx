@@ -304,16 +304,6 @@ export function BgmLoopRecorderScreen() {
             onAllPlay={handleAllPlay}
             onStop={stopAll}
           />
-          {waveformSelection() && (
-            <WaveformEditPanel
-              selection={waveformSelection()!}
-              onPreview={() => handlePlayLane(waveformSelection()!.blockIndex, waveformSelection()!.laneId)}
-              onTrimStartChange={updateTrimStart}
-              onTrimEndChange={updateTrimEnd}
-              onAutoTrimSilence={autoTrimSilence}
-              onDelete={deleteSelectedTake}
-            />
-          )}
           <KeySignatureBar
             keyName={state.key}
             clef={state.keySignature.clef}
@@ -355,6 +345,18 @@ export function BgmLoopRecorderScreen() {
             currentBeat={state.countIn.currentBeat}
             beats={state.countIn.beats}
           />
+          {waveformSelection() && (
+            <div class="wave-editor-overlay">
+              <WaveformEditPanel
+                selection={waveformSelection()!}
+                onPreview={() => handlePlayLane(waveformSelection()!.blockIndex, waveformSelection()!.laneId)}
+                onTrimStartChange={updateTrimStart}
+                onTrimEndChange={updateTrimEnd}
+                onAutoTrimSilence={autoTrimSilence}
+                onDelete={deleteSelectedTake}
+              />
+            </div>
+          )}
         </section>
       </div>
     </main>

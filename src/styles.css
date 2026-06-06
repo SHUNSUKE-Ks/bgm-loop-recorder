@@ -41,6 +41,20 @@ button {
   line-height: 1;
 }
 
+.back-button {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #111827;
+  font-size: 46px;
+  font-weight: 1000;
+  line-height: 0.8;
+  padding: 0 0 4px;
+}
+
 .header-meta-button {
   display: flex;
   width: fit-content;
@@ -216,14 +230,23 @@ button {
   padding: 0;
 }
 
+.wave-editor-overlay {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 174px;
+  z-index: 24;
+  pointer-events: none;
+}
+
 .wave-editor {
-  margin: 8px 8px 0;
+  pointer-events: auto;
   border: 1px solid #334155;
   border-radius: 18px;
   background: linear-gradient(180deg, #222 0%, #141414 100%);
   color: #0b8fff;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
-  padding: 10px;
+  padding: 9px 10px 10px;
 }
 
 .wave-editor-time {
@@ -247,7 +270,7 @@ button {
 
 .waveform-area {
   position: relative;
-  height: 82px;
+  height: 72px;
   margin-top: 8px;
   overflow: hidden;
   border-radius: 10px;
@@ -297,7 +320,7 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .trim-controls input {
@@ -309,7 +332,7 @@ button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .wave-editor-actions button {

@@ -72,6 +72,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
   const [activeRecording, setActiveRecording] = createSignal<ActiveRecording | null>(null);
   const timers = new Set<number>();
+  let codeBlockStackRef: HTMLDivElement | undefined;
   let playbackBeatStep = 0;
 
   const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
@@ -302,6 +303,10 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     block.lanes.bottom.takes = [];
     setBlocks((items) => [...items, block]);
     setActiveBlockIndex(nextIndex);
+    requestAnimationFrame(() => {
+      if (!codeBlockStackRef) return;
+      codeBlockStackRef.scrollTop = codeBlockStackRef.scrollHeight;
+    });
   };
 
   const updateTrimStart = (value: number) => {
@@ -359,7 +364,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
             display={state.keySignature.display}
             notes={scoreNotes()}
           />
-          <div class="codeblock-stack">
+          <div ref={codeBlockStackRef} class="codeblock-stack">
             <For each={blocks}>
               {(block, index) => (
                 <CodeBlockRecorder
@@ -379,7 +384,6 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
               +
             </button>
           </div>
-          <div class="flex-1 bg-white" />
           <ActiveStateFooter
             screen={state.screen}
             label={activeBlock().label}

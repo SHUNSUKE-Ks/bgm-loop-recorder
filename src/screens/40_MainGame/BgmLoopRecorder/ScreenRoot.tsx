@@ -7,6 +7,7 @@ import { CountInOverlay } from "../../../components/bgmLoopRecorder/CountInOverl
 import { HeaderSongBar } from "../../../components/bgmLoopRecorder/HeaderSongBar";
 import { KeySignatureBar } from "../../../components/bgmLoopRecorder/KeySignatureBar";
 import { WaveformEditPanel } from "../../../components/bgmLoopRecorder/WaveformEditPanel";
+import type { SongOption } from "../../02_ChordSelect/ChordSelectScreen";
 import { beatDurationMs, initialScreen03State, nextTakeId } from "./screen03State";
 import type { LaneId, RecorderBlockState } from "./screen03Types";
 
@@ -23,9 +24,50 @@ type ActiveRecording = {
   laneId: LaneId;
 };
 
-export function BgmLoopRecorderScreen() {
-  const [state, setState] = createStore(structuredClone(initialScreen03State));
-  const [blocks, setBlocks] = createStore<RecorderBlockState[]>([structuredClone(initialScreen03State.recorderBlock)]);
+const noteAccidentalMap: Record<string, string[]> = {
+  C: ["C", "Dm", "Em", "F", "G", "Am", "Bm"],
+  G: ["G", "Am", "Bm", "C", "D", "Em", "F♯m"],
+  D: ["D", "Em", "F♯m", "G", "A", "Bm", "C♯m"],
+  A: ["A", "Bm", "C♯m", "D", "E", "F♯m", "G♯m"],
+  E: ["E", "F♯m", "G♯m", "A", "B", "C♯m", "D♯m"],
+  B: ["B", "C♯m", "D♯m", "E", "F♯", "G♯m", "A♯m"],
+  F: ["F", "Gm", "Am", "B♭", "C", "Dm", "Em"],
+  Bb: ["B♭", "Cm", "Dm", "E♭", "F", "Gm", "Am"],
+  Eb: ["E♭", "Fm", "Gm", "A♭", "B♭", "Cm", "Dm"],
+  Ab: ["A♭", "B♭m", "Cm", "D♭", "E♭", "Fm", "Gm"],
+  Db: ["D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m", "Cm"]
+};
+
+const keySignatureDisplayMap: Record<string, { clef: "treble"; accidentals: string[]; display: string }> = {
+  C: { clef: "treble", accidentals: [], display: "C natural" },
+  G: { clef: "treble", accidentals: ["F#"], display: "F#" },
+  D: { clef: "treble", accidentals: ["F#", "C#"], display: "F#, C#" },
+  A: { clef: "treble", accidentals: ["F#", "C#", "G#"], display: "F#, C#, G#" },
+  E: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#"], display: "F#, C#, G#, D#" },
+  B: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#", "A#"], display: "F#, C#, G#, D#, A#" },
+  F: { clef: "treble", accidentals: ["Bb"], display: "Bb" },
+  Bb: { clef: "treble", accidentals: ["Bb", "Eb"], display: "Bb, Eb" },
+  Eb: { clef: "treble", accidentals: ["Bb", "Eb", "Ab"], display: "Bb, Eb, Ab" },
+  Ab: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db"], display: "Bb, Eb, Ab, Db" },
+  Db: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db", "Gb"], display: "Bb, Eb, Ab, Db, Gb" }
+};
+
+type BgmLoopRecorderScreenProps = {
+  song: SongOption;
+  onBack: () => void;
+};
+
+export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
+  const initialState = structuredClone(initialScreen03State);
+  initialState.title = props.song.title;
+  initialState.bpm = props.song.bpm;
+  initialState.key = props.song.key;
+  initialState.keySignature = keySignatureDisplayMap[props.song.key] ?? keySignatureDisplayMap.C;
+  initialState.availableNotes.notes = noteAccidentalMap[props.song.key] ?? noteAccidentalMap.C;
+  initialState.recorderBlock.chords = props.song.chords;
+  const initialBlock = structuredClone(initialState.recorderBlock);
+  const [state, setState] = createStore(initialState);
+  const [blocks, setBlocks] = createStore<RecorderBlockState[]>([initialBlock]);
   const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
   const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
   const [activeRecording, setActiveRecording] = createSignal<ActiveRecording | null>(null);
@@ -33,33 +75,6 @@ export function BgmLoopRecorderScreen() {
   let playbackBeatStep = 0;
 
   const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
-  const noteAccidentalMap: Record<string, string[]> = {
-    C: ["C", "Dm", "Em", "F", "G", "Am", "Bm"],
-    G: ["G", "Am", "Bm", "C", "D", "Em", "F♯m"],
-    D: ["D", "Em", "F♯m", "G", "A", "Bm", "C♯m"],
-    A: ["A", "Bm", "C♯m", "D", "E", "F♯m", "G♯m"],
-    E: ["E", "F♯m", "G♯m", "A", "B", "C♯m", "D♯m"],
-    B: ["B", "C♯m", "D♯m", "E", "F♯", "G♯m", "A♯m"],
-    F: ["F", "Gm", "Am", "B♭", "C", "Dm", "Em"],
-    Bb: ["B♭", "Cm", "Dm", "E♭", "F", "Gm", "Am"],
-    Eb: ["E♭", "Fm", "Gm", "A♭", "B♭", "Cm", "Dm"],
-    Ab: ["A♭", "B♭m", "Cm", "D♭", "E♭", "Fm", "Gm"],
-    Db: ["D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m", "Cm"]
-  };
-
-  const keySignatureDisplayMap: Record<string, { clef: "treble"; accidentals: string[]; display: string }> = {
-    C: { clef: "treble", accidentals: [], display: "C natural" },
-    G: { clef: "treble", accidentals: ["F#"], display: "F#" },
-    D: { clef: "treble", accidentals: ["F#", "C#"], display: "F#, C#" },
-    A: { clef: "treble", accidentals: ["F#", "C#", "G#"], display: "F#, C#, G#" },
-    E: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#"], display: "F#, C#, G#, D#" },
-    B: { clef: "treble", accidentals: ["F#", "C#", "G#", "D#", "A#"], display: "F#, C#, G#, D#, A#" },
-    F: { clef: "treble", accidentals: ["Bb"], display: "Bb" },
-    Bb: { clef: "treble", accidentals: ["Bb", "Eb"], display: "Bb, Eb" },
-    Eb: { clef: "treble", accidentals: ["Bb", "Eb", "Ab"], display: "Bb, Eb, Ab" },
-    Ab: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db"], display: "Bb, Eb, Ab, Db" },
-    Db: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db", "Gb"], display: "Bb, Eb, Ab, Db, Gb" }
-  };
   const scoreNotes = () => noteAccidentalMap[state.key] ?? noteAccidentalMap.C;
 
   const clearTimers = () => {
@@ -324,7 +339,7 @@ export function BgmLoopRecorderScreen() {
             title={state.title}
             bpm={state.bpm}
             keyName={state.key}
-            onBack={() => console.info("back to song list")}
+            onBack={props.onBack}
             onBpmChange={handleBpmChange}
             onKeyChange={handleKeyChange}
           />

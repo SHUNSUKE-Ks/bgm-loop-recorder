@@ -102,9 +102,9 @@ button {
 
 .score-band {
   display: grid;
-  min-height: 88px;
-  grid-template-columns: 72px 1fr;
-  gap: 8px;
+  min-height: 104px;
+  grid-template-columns: 58px 42px 1fr;
+  gap: 10px;
   align-items: center;
   border-bottom: 2px solid #cbd5e1;
   border-top: 2px solid #38bdf8;
@@ -117,13 +117,57 @@ button {
       transparent 13px
     ),
     #f8fafc;
-  padding: 0 28px;
+  padding: 0 22px;
 }
 
 .score-clef {
   color: #111827;
   font-family: "Times New Roman", serif;
   font-size: 58px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-accidentals {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  color: #111827;
+  font-family: "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-note-staff {
+  position: relative;
+  min-width: 0;
+  height: 74px;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 12px,
+    #111827 12px,
+    #111827 14px,
+    transparent 14px,
+    transparent 24px
+  );
+}
+
+.score-note {
+  position: absolute;
+  display: grid;
+  width: 30px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid #111827;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
 }
@@ -203,15 +247,15 @@ button {
 }
 
 .label-input {
-  width: 54px;
-  height: 58px;
-  border: 3px solid #111827;
-  border-radius: 10px;
+  width: 58px;
+  height: 42px;
+  border: 2px solid #111827;
+  border-radius: 0;
   background: #ffffff;
   color: #111827;
   text-align: center;
-  font-size: 25px;
-  font-weight: 1000;
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .chord-button {

@@ -3,22 +3,53 @@ type KeySignatureBarProps = {
   clef: "treble";
   accidentals: string[];
   display: string;
+  notes: string[];
 };
 
 export function KeySignatureBar(props: KeySignatureBarProps) {
-  const marks = () => (props.accidentals.length > 0 ? props.accidentals.join("  ") : "natural");
+  const notePositions = [
+    { left: "2%", top: "44px" },
+    { left: "16%", top: "34px" },
+    { left: "30%", top: "24px" },
+    { left: "44%", top: "14px" },
+    { left: "58%", top: "34px" },
+    { left: "72%", top: "24px" },
+    { left: "86%", top: "14px" }
+  ];
+  const keyAccidentalMap: Record<string, string[]> = {
+    C: [],
+    G: ["♯"],
+    D: ["♯", "♯"],
+    A: ["♯", "♯", "♯"],
+    E: ["♯", "♯", "♯", "♯"],
+    B: ["♯", "♯", "♯", "♯", "♯"],
+    F: ["♭"],
+    Bb: ["♭", "♭"],
+    Eb: ["♭", "♭", "♭"],
+    Ab: ["♭", "♭", "♭", "♭"],
+    Db: ["♭", "♭", "♭", "♭", "♭"]
+  };
+  const marks = () => {
+    const mapped = keyAccidentalMap[props.keyName] ?? props.accidentals.map((mark) => (mark.includes("b") ? "♭" : "♯"));
+    return mapped;
+  };
 
   return (
-    <section class="score-band">
+    <section class="score-band" aria-label={`${props.keyName} ${props.display}`}>
       <div class="score-clef" aria-hidden="true">
         𝄞
       </div>
-      <div class="flex min-w-0 flex-col justify-center">
-        <div class="text-xs font-black uppercase text-slate-400">Key Signature</div>
-        <div class="truncate text-xl font-black text-slate-900">
-          {props.keyName} / {marks()}
-        </div>
-        <div class="truncate text-xs font-bold text-slate-500">{props.display}</div>
+      <div class="score-accidentals" aria-hidden="true">
+        {marks().map((mark) => (
+          <span>{mark}</span>
+        ))}
+      </div>
+      <div class="score-note-staff">
+        {props.notes.map((note, index) => (
+          <span class="score-note" style={notePositions[index % notePositions.length]}>
+            {note}
+          </span>
+        ))}
       </div>
     </section>
   );

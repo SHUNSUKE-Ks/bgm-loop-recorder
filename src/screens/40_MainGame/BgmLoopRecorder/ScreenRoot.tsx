@@ -1,7 +1,6 @@
 import { createStore } from "solid-js/store";
 import { onCleanup } from "solid-js";
 import { ActiveStateFooter } from "../../../components/bgmLoopRecorder/ActiveStateFooter";
-import { AvailableNotesBar } from "../../../components/bgmLoopRecorder/AvailableNotesBar";
 import { BpmLampControlBar } from "../../../components/bgmLoopRecorder/BpmLampControlBar";
 import { CodeBlockRecorder } from "../../../components/bgmLoopRecorder/CodeBlockRecorder";
 import { CountInOverlay } from "../../../components/bgmLoopRecorder/CountInOverlay";
@@ -13,6 +12,7 @@ import type { LaneId } from "./screen03Types";
 export function BgmLoopRecorderScreen() {
   const [state, setState] = createStore(structuredClone(initialScreen03State));
   const timers = new Set<number>();
+  let playbackBeatStep = 0;
 
   const clearTimers = () => {
     timers.forEach((timerId) => window.clearInterval(timerId));
@@ -33,11 +33,30 @@ export function BgmLoopRecorderScreen() {
 
   const startBeatClock = () => {
     clearTimers();
+    playbackBeatStep = 0;
+    setState("recorderBlock", "activeChord", 0);
+    setState("controlBar", "beatLamp", 1);
     setState("controlBar", { playing: true, stopped: false });
     const beatMs = beatDurationMs(state.bpm);
     const timerId = window.setInterval(() => {
-      const nextBeat = state.controlBar.beatLamp >= 4 ? 1 : state.controlBar.beatLamp + 1;
-      const nextChord = (nextBeat - 1) % state.recorderBlock.chords.length;
+      playbackBeatStep += 1;
+      const nextBeat = (playbackBeatStep % 4) + 1;
+      const nextChord = Math.floor(playbackBeatStep / 4) % state.recorderBlock.chords.length;
+      setState("controlBar", "beatLamp", nextBeat);
+      setState("recorderBlock", "activeChord", nextChord);
+    }, beatMs);
+    timers.add(timerId);
+  };
+
+  const startRecordingBeatClock = () => {
+    playbackBeatStep = 0;
+    setState("controlBar", "beatLamp", 1);
+    setState("recorderBlock", "activeChord", 0);
+    const beatMs = beatDurationMs(state.bpm);
+    const timerId = window.setInterval(() => {
+      playbackBeatStep += 1;
+      const nextBeat = (playbackBeatStep % 4) + 1;
+      const nextChord = Math.floor(playbackBeatStep / 4) % state.recorderBlock.chords.length;
       setState("controlBar", "beatLamp", nextBeat);
       setState("recorderBlock", "activeChord", nextChord);
     }, beatMs);
@@ -86,6 +105,7 @@ export function BgmLoopRecorderScreen() {
       setState("countIn", "status", "recording");
       setState("recorderBlock", "lanes", laneId, "recording", true);
       setState("controlBar", { playing: true, stopped: false, beatLamp: 1 });
+      startRecordingBeatClock();
 
       const armedLane = state.recorderBlock.overdubTarget;
       if (armedLane) {
@@ -94,6 +114,7 @@ export function BgmLoopRecorderScreen() {
 
       const finishTimer = window.setTimeout(() => {
         const takes = state.recorderBlock.lanes[laneId].takes;
+        clearTimers();
         setState("recorderBlock", "lanes", laneId, "takes", [...takes, nextTakeId(laneId, takes.length)]);
         setState("recorderBlock", "lanes", laneId, "recording", false);
         setState("recorderBlock", "lanes", "top", "playing", false);
@@ -101,8 +122,7 @@ export function BgmLoopRecorderScreen() {
         setState("countIn", { currentBeat: 0, status: "idle" });
         setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
         setState("recorderBlock", "activeChord", 0);
-        timers.delete(finishTimer);
-      }, beatMs * 2);
+      }, beatMs * state.recorderBlock.chords.length * 4);
       timers.add(finishTimer);
     }, beatMs);
 
@@ -145,11 +165,7 @@ export function BgmLoopRecorderScreen() {
             clef={state.keySignature.clef}
             accidentals={state.keySignature.accidentals}
             display={state.keySignature.display}
-          />
-          <AvailableNotesBar
             notes={state.availableNotes.notes}
-            quality={state.availableNotes.quality}
-            symbols={state.availableNotes.symbols}
           />
           <CodeBlockRecorder
             blockId={state.recorderBlock.blockId}

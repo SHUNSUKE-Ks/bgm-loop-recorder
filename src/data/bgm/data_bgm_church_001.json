@@ -1,0 +1,54 @@
+{
+  "file": "data_bgm_church_001.json",
+  "screen": "03_score",
+  "title": "教会の祈り",
+  "bpm": 120,
+  "key": "C",
+  "countIn": {
+    "enabled": true,
+    "beats": 4,
+    "currentBeat": 0,
+    "status": "idle"
+  },
+  "controlBar": {
+    "repeat": true,
+    "beatLamp": 1,
+    "playing": false,
+    "stopped": true
+  },
+  "keySignature": {
+    "clef": "treble",
+    "accidentals": [],
+    "display": "C natural"
+  },
+  "availableNotes": {
+    "notes": ["C", "D", "E", "F", "G", "A", "B"],
+    "quality": ["Major", "Minor"],
+    "symbols": ["♯", "♭"]
+  },
+  "recorderBlock": {
+    "blockId": "codeblock_001",
+    "label": "A1",
+    "chords": ["Dm7", "G", "C", "Am"],
+    "activeChord": 0,
+    "overdubTarget": "top",
+    "lanes": {
+      "top": {
+        "id": "top",
+        "recordEnabled": true,
+        "recording": false,
+        "playing": false,
+        "armedPlayback": true,
+        "takes": ["take_top_001", "take_top_002"]
+      },
+      "bottom": {
+        "id": "bottom",
+        "recordEnabled": true,
+        "recording": false,
+        "playing": false,
+        "armedPlayback": false,
+        "takes": ["take_bottom_001"]
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="BGM Loop Recorder icon">
+  <rect width="192" height="192" rx="42" fill="#111827"/>
+  <circle cx="96" cy="96" r="54" fill="#fbbf24"/>
+  <path d="M72 62h48v62c0 14-12 24-27 24-13 0-23-7-23-18s10-18 23-18c5 0 9 1 13 3V78H72z" fill="#111827"/>
+</svg>

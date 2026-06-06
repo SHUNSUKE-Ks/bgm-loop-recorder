@@ -1,0 +1,24 @@
+{
+  "name": "bgm-loop-recorder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.3",
+    "motion": "^12.23.12",
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0",
+    "vite-plugin-pwa": "^1.1.0",
+    "vite-plugin-solid": "^2.11.8"
+  }
+}

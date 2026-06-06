@@ -1,0 +1,50 @@
+import { For } from "solid-js";
+import type { LaneId, RecLaneState } from "../../screens/40_MainGame/BgmLoopRecorder/screen03Types";
+import { RecordedTakeIcon } from "./RecordedTakeIcon";
+
+type RecLaneRowProps = {
+  laneId: LaneId;
+  lane: RecLaneState;
+  onRec: (laneId: LaneId) => void;
+  onPlayLane: (laneId: LaneId) => void;
+  onToggleTakeArmed: (laneId: LaneId, takeId: string) => void;
+};
+
+export function RecLaneRow(props: RecLaneRowProps) {
+  return (
+    <div class="grid h-[48px] grid-cols-[58px_1fr_76px] items-center gap-2">
+      <button
+        type="button"
+        class="rec-button"
+        classList={{ recording: props.lane.recording }}
+        disabled={!props.lane.recordEnabled}
+        onClick={() => props.onRec(props.laneId)}
+      >
+        REC
+      </button>
+      <div class="lane-wave">
+        <For each={props.lane.takes}>
+          {(takeId) => (
+            <RecordedTakeIcon
+              takeId={takeId}
+              armed={props.lane.armedPlayback}
+              onClick={() => props.onPlayLane(props.laneId)}
+              onLongPress={() => props.onToggleTakeArmed(props.laneId, takeId)}
+            />
+          )}
+        </For>
+        <span class="wave-line" />
+      </div>
+      <button
+        type="button"
+        class="lane-play-button"
+        classList={{ playing: props.lane.playing }}
+        aria-label={`${props.laneId}を再生`}
+        title={`${props.laneId}を再生`}
+        onClick={() => props.onPlayLane(props.laneId)}
+      >
+        ▶
+      </button>
+    </div>
+  );
+}

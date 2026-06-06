@@ -17,10 +17,12 @@ export function BpmLampControlBar(props: BpmLampControlBarProps) {
         type="button"
         classList={{ "is-active": props.repeat }}
         class="repeat-button"
-        aria-label="リピート"
-        title="リピート"
+        aria-label={props.repeat ? "リピートON" : "リピートOFF"}
+        title={props.repeat ? "リピートON" : "リピートOFF"}
         onClick={props.onToggleRepeat}
-      />
+      >
+        <span class="repeat-state">{props.repeat ? "ON" : "OFF"}</span>
+      </button>
       <div class="flex flex-1 items-center justify-between gap-3">
         <For each={Array.from({ length: props.beatCount }, (_, index) => index + 1)}>
           {(beat) => (
@@ -32,7 +34,7 @@ export function BpmLampControlBar(props: BpmLampControlBarProps) {
           )}
         </For>
       </div>
-      <div class="flex flex-col items-center gap-1">
+      <div class="transport-stop">
         <button
           type="button"
           class="stop-button"
@@ -42,7 +44,7 @@ export function BpmLampControlBar(props: BpmLampControlBarProps) {
         >
           {props.playing ? "■" : "▶"}
         </button>
-        <button type="button" class="text-[11px] font-black text-emerald-600" onClick={props.onStop}>
+        <button type="button" class="stop-label" onClick={props.onStop}>
           STOP
         </button>
       </div>

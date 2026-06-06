@@ -17,18 +17,12 @@ export function CountInOverlay(props: CountInOverlayProps) {
   });
 
   return (
-    <Show when={props.status !== "idle"}>
-      <div class="absolute inset-0 z-20 grid place-items-center bg-slate-950/35 backdrop-blur-[1px]">
-        <div ref={numberRef} class="count-overlay-card">
-          <div class="text-sm font-black tracking-normal text-amber-500">
-            {props.status === "counting" ? "COUNT IN" : "REC"}
-          </div>
-          <div class="text-7xl font-black leading-none">
-            {props.status === "counting" ? props.currentBeat : "●"}
-          </div>
-          <div class="text-xs font-bold text-slate-500">
-            {props.status === "counting" ? `${props.currentBeat} / ${props.beats}` : "mock recording"}
-          </div>
+    <Show when={props.status === "counting"}>
+      <div class="count-in-top">
+        <div ref={numberRef} class="count-in-pill">
+          <span>COUNT</span>
+          <strong>{props.currentBeat}</strong>
+          <span>/ {props.beats}</span>
         </div>
       </div>
     </Show>

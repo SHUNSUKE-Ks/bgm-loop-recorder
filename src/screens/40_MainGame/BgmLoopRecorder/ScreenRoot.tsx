@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store";
-import { onCleanup } from "solid-js";
+import { createSignal, For, onCleanup } from "solid-js";
 import { ActiveStateFooter } from "../../../components/bgmLoopRecorder/ActiveStateFooter";
 import { BpmLampControlBar } from "../../../components/bgmLoopRecorder/BpmLampControlBar";
 import { CodeBlockRecorder } from "../../../components/bgmLoopRecorder/CodeBlockRecorder";
@@ -7,12 +7,16 @@ import { CountInOverlay } from "../../../components/bgmLoopRecorder/CountInOverl
 import { HeaderSongBar } from "../../../components/bgmLoopRecorder/HeaderSongBar";
 import { KeySignatureBar } from "../../../components/bgmLoopRecorder/KeySignatureBar";
 import { beatDurationMs, initialScreen03State, nextTakeId } from "./screen03State";
-import type { LaneId } from "./screen03Types";
+import type { LaneId, RecorderBlockState } from "./screen03Types";
 
 export function BgmLoopRecorderScreen() {
   const [state, setState] = createStore(structuredClone(initialScreen03State));
+  const [blocks, setBlocks] = createStore<RecorderBlockState[]>([structuredClone(initialScreen03State.recorderBlock)]);
+  const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
   const timers = new Set<number>();
   let playbackBeatStep = 0;
+
+  const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
 
   const clearTimers = () => {
     timers.forEach((timerId) => window.clearInterval(timerId));
@@ -26,39 +30,45 @@ export function BgmLoopRecorderScreen() {
     clearTimers();
     setState("countIn", { currentBeat: 0, status: "idle" });
     setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
-    setState("recorderBlock", "activeChord", 0);
-    setState("recorderBlock", "lanes", "top", { recording: false, playing: false });
-    setState("recorderBlock", "lanes", "bottom", { recording: false, playing: false });
+    setBlocks((block) => block.map((item) => ({
+      ...item,
+      activeChord: 0,
+      lanes: {
+        top: { ...item.lanes.top, recording: false, playing: false },
+        bottom: { ...item.lanes.bottom, recording: false, playing: false }
+      }
+    })));
   };
 
-  const startBeatClock = () => {
+  const startBeatClock = (blockIndex: number) => {
     clearTimers();
+    setActiveBlockIndex(blockIndex);
     playbackBeatStep = 0;
-    setState("recorderBlock", "activeChord", 0);
+    setBlocks(blockIndex, "activeChord", 0);
     setState("controlBar", "beatLamp", 1);
     setState("controlBar", { playing: true, stopped: false });
     const beatMs = beatDurationMs(state.bpm);
     const timerId = window.setInterval(() => {
       playbackBeatStep += 1;
       const nextBeat = (playbackBeatStep % 4) + 1;
-      const nextChord = Math.floor(playbackBeatStep / 4) % state.recorderBlock.chords.length;
+      const nextChord = Math.floor(playbackBeatStep / 4) % blocks[blockIndex].chords.length;
       setState("controlBar", "beatLamp", nextBeat);
-      setState("recorderBlock", "activeChord", nextChord);
+      setBlocks(blockIndex, "activeChord", nextChord);
     }, beatMs);
     timers.add(timerId);
   };
 
-  const startRecordingBeatClock = () => {
+  const startRecordingBeatClock = (blockIndex: number) => {
     playbackBeatStep = 0;
     setState("controlBar", "beatLamp", 1);
-    setState("recorderBlock", "activeChord", 0);
+    setBlocks(blockIndex, "activeChord", 0);
     const beatMs = beatDurationMs(state.bpm);
     const timerId = window.setInterval(() => {
       playbackBeatStep += 1;
       const nextBeat = (playbackBeatStep % 4) + 1;
-      const nextChord = Math.floor(playbackBeatStep / 4) % state.recorderBlock.chords.length;
+      const nextChord = Math.floor(playbackBeatStep / 4) % blocks[blockIndex].chords.length;
       setState("controlBar", "beatLamp", nextBeat);
-      setState("recorderBlock", "activeChord", nextChord);
+      setBlocks(blockIndex, "activeChord", nextChord);
     }, beatMs);
     timers.add(timerId);
   };
@@ -68,23 +78,30 @@ export function BgmLoopRecorderScreen() {
       stopAll();
       return;
     }
-    startBeatClock();
+    startBeatClock(activeBlockIndex());
   };
 
-  const handlePlayLane = (laneId: LaneId) => {
-    const nextPlaying = !state.recorderBlock.lanes[laneId].playing;
-    setState("recorderBlock", "lanes", "top", "playing", laneId === "top" ? nextPlaying : false);
-    setState("recorderBlock", "lanes", "bottom", "playing", laneId === "bottom" ? nextPlaying : false);
+  const handlePlayLane = (blockIndex: number, laneId: LaneId) => {
+    setActiveBlockIndex(blockIndex);
+    const nextPlaying = !blocks[blockIndex].lanes[laneId].playing;
+    setBlocks((block) => block.map((item, index) => ({
+      ...item,
+      lanes: {
+        top: { ...item.lanes.top, playing: index === blockIndex && laneId === "top" ? nextPlaying : false },
+        bottom: { ...item.lanes.bottom, playing: index === blockIndex && laneId === "bottom" ? nextPlaying : false }
+      }
+    })));
     if (nextPlaying) {
-      startBeatClock();
+      startBeatClock(blockIndex);
     } else {
       stopAll();
     }
   };
 
-  const handleRec = (laneId: LaneId) => {
+  const handleRec = (blockIndex: number, laneId: LaneId) => {
     if (state.countIn.status !== "idle") return;
 
+    setActiveBlockIndex(blockIndex);
     clearTimers();
     const beatMs = beatDurationMs(state.bpm);
     setState("countIn", { currentBeat: 1, status: "counting" });
@@ -96,49 +113,69 @@ export function BgmLoopRecorderScreen() {
       if (nextBeat <= state.countIn.beats) {
         setState("countIn", "currentBeat", nextBeat);
         setState("controlBar", "beatLamp", nextBeat);
-        setState("recorderBlock", "activeChord", nextBeat - 1);
+        setBlocks(blockIndex, "activeChord", 0);
         return;
       }
 
       window.clearInterval(timerId);
       timers.delete(timerId);
       setState("countIn", "status", "recording");
-      setState("recorderBlock", "lanes", laneId, "recording", true);
+      setBlocks(blockIndex, "lanes", laneId, "recording", true);
       setState("controlBar", { playing: true, stopped: false, beatLamp: 1 });
-      startRecordingBeatClock();
+      startRecordingBeatClock(blockIndex);
 
-      const armedLane = state.recorderBlock.overdubTarget;
+      const armedLane = blocks[blockIndex].overdubTarget;
       if (armedLane) {
-        setState("recorderBlock", "lanes", armedLane, "playing", true);
+        setBlocks(blockIndex, "lanes", armedLane, "playing", true);
       }
 
       const finishTimer = window.setTimeout(() => {
-        const takes = state.recorderBlock.lanes[laneId].takes;
+        const takes = blocks[blockIndex].lanes[laneId].takes;
         clearTimers();
-        setState("recorderBlock", "lanes", laneId, "takes", [...takes, nextTakeId(laneId, takes.length)]);
-        setState("recorderBlock", "lanes", laneId, "recording", false);
-        setState("recorderBlock", "lanes", "top", "playing", false);
-        setState("recorderBlock", "lanes", "bottom", "playing", false);
+        setBlocks(blockIndex, "lanes", laneId, "takes", [...takes, nextTakeId(laneId, takes.length)]);
+        setBlocks(blockIndex, "lanes", laneId, "recording", false);
+        setBlocks(blockIndex, "lanes", "top", "playing", false);
+        setBlocks(blockIndex, "lanes", "bottom", "playing", false);
         setState("countIn", { currentBeat: 0, status: "idle" });
         setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
-        setState("recorderBlock", "activeChord", 0);
-      }, beatMs * state.recorderBlock.chords.length * 4);
+        setBlocks(blockIndex, "activeChord", 0);
+      }, beatMs * blocks[blockIndex].chords.length * 4);
       timers.add(finishTimer);
     }, beatMs);
 
     timers.add(timerId);
   };
 
-  const handleToggleTakeArmed = (laneId: LaneId) => {
-    const nextArmed = !state.recorderBlock.lanes[laneId].armedPlayback;
+  const handleToggleTakeArmed = (blockIndex: number, laneId: LaneId) => {
+    setActiveBlockIndex(blockIndex);
+    const nextArmed = !blocks[blockIndex].lanes[laneId].armedPlayback;
     const otherLane: LaneId = laneId === "top" ? "bottom" : "top";
-    setState("recorderBlock", "lanes", laneId, "armedPlayback", nextArmed);
-    setState("recorderBlock", "lanes", otherLane, "armedPlayback", false);
-    setState("recorderBlock", "overdubTarget", nextArmed ? laneId : null);
+    setBlocks(blockIndex, "lanes", laneId, "armedPlayback", nextArmed);
+    setBlocks(blockIndex, "lanes", otherLane, "armedPlayback", false);
+    setBlocks(blockIndex, "overdubTarget", nextArmed ? laneId : null);
   };
 
-  const handleChangeLabel = (value: string) => {
-    setState("recorderBlock", "label", value.trim() || "A1");
+  const handleChangeLabel = (blockIndex: number, value: string) => {
+    setBlocks(blockIndex, "label", value.trim() || `A${blockIndex + 1}`);
+  };
+
+  const handleAddCodeBlock = () => {
+    const nextIndex = blocks.length;
+    const block = structuredClone(blocks[0]);
+    block.blockId = `codeblock_${String(nextIndex + 1).padStart(3, "0")}`;
+    block.label = `A${nextIndex + 1}`;
+    block.activeChord = 0;
+    block.overdubTarget = "top";
+    block.lanes.top.recording = false;
+    block.lanes.top.playing = false;
+    block.lanes.top.armedPlayback = true;
+    block.lanes.top.takes = [];
+    block.lanes.bottom.recording = false;
+    block.lanes.bottom.playing = false;
+    block.lanes.bottom.armedPlayback = false;
+    block.lanes.bottom.takes = [];
+    setBlocks(blocks.length, block);
+    setActiveBlockIndex(nextIndex);
   };
 
   return (
@@ -167,23 +204,32 @@ export function BgmLoopRecorderScreen() {
             display={state.keySignature.display}
             notes={state.availableNotes.notes}
           />
-          <CodeBlockRecorder
-            blockId={state.recorderBlock.blockId}
-            label={state.recorderBlock.label}
-            chords={state.recorderBlock.chords}
-            activeChord={state.recorderBlock.activeChord}
-            lanes={state.recorderBlock.lanes}
-            overdubTarget={state.recorderBlock.overdubTarget}
-            onRec={handleRec}
-            onPlayLane={handlePlayLane}
-            onToggleTakeArmed={handleToggleTakeArmed}
-            onChangeLabel={handleChangeLabel}
-          />
+          <div class="codeblock-stack">
+            <For each={blocks}>
+              {(block, index) => (
+                <CodeBlockRecorder
+                  blockId={block.blockId}
+                  label={block.label}
+                  chords={block.chords}
+                  activeChord={block.activeChord}
+                  lanes={block.lanes}
+                  overdubTarget={block.overdubTarget}
+                  onRec={(laneId) => handleRec(index(), laneId)}
+                  onPlayLane={(laneId) => handlePlayLane(index(), laneId)}
+                  onToggleTakeArmed={(laneId) => handleToggleTakeArmed(index(), laneId)}
+                  onChangeLabel={(value) => handleChangeLabel(index(), value)}
+                />
+              )}
+            </For>
+            <button type="button" class="add-codeblock-button" aria-label="コードブロックを追加" title="コードブロックを追加" onClick={handleAddCodeBlock}>
+              +
+            </button>
+          </div>
           <div class="flex-1 bg-white" />
           <ActiveStateFooter
             screen={state.screen}
-            label={state.recorderBlock.label}
-            activeLane={state.recorderBlock.overdubTarget}
+            label={activeBlock().label}
+            activeLane={activeBlock().overdubTarget}
             status={state.countIn.status}
             beat={state.countIn.currentBeat || state.controlBar.beatLamp}
             onSave={() => console.info("mock save", structuredClone(state))}

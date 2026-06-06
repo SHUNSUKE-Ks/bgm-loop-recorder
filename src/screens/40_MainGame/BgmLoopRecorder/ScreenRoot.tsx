@@ -18,11 +18,17 @@ type WaveformSelection = {
   end: number;
 };
 
+type ActiveRecording = {
+  blockIndex: number;
+  laneId: LaneId;
+};
+
 export function BgmLoopRecorderScreen() {
   const [state, setState] = createStore(structuredClone(initialScreen03State));
   const [blocks, setBlocks] = createStore<RecorderBlockState[]>([structuredClone(initialScreen03State.recorderBlock)]);
   const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
   const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
+  const [activeRecording, setActiveRecording] = createSignal<ActiveRecording | null>(null);
   const timers = new Set<number>();
   let playbackBeatStep = 0;
 
@@ -64,11 +70,30 @@ export function BgmLoopRecorderScreen() {
 
   onCleanup(clearTimers);
 
+  const finishActiveRecording = () => {
+    const recording = activeRecording();
+    if (!recording) return;
+
+    const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
+    const takeId = nextTakeId(recording.laneId, takes.length);
+    setBlocks(recording.blockIndex, "lanes", recording.laneId, "takes", [...takes, takeId]);
+    setBlocks(recording.blockIndex, "lanes", recording.laneId, "recording", false);
+    setBlocks(recording.blockIndex, "lanes", "top", "playing", false);
+    setBlocks(recording.blockIndex, "lanes", "bottom", "playing", false);
+    setBlocks(recording.blockIndex, "activeChord", 0);
+    setWaveformSelection({ blockIndex: recording.blockIndex, laneId: recording.laneId, takeId, start: 0, end: 100 });
+    setActiveRecording(null);
+  };
+
   const stopAll = () => {
+    const wasRecording = activeRecording() !== null;
+    finishActiveRecording();
     clearTimers();
     setState("countIn", { currentBeat: 0, status: "idle" });
     setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
-    setWaveformSelection(null);
+    if (!wasRecording) {
+      setWaveformSelection(null);
+    }
     setBlocks((block) => block.map((item) => ({
       ...item,
       activeChord: 0,
@@ -140,9 +165,14 @@ export function BgmLoopRecorderScreen() {
   };
 
   const handleRec = (blockIndex: number, laneId: LaneId) => {
+    if (state.countIn.status === "recording") {
+      stopAll();
+      return;
+    }
     if (state.countIn.status !== "idle") return;
 
     setActiveBlockIndex(blockIndex);
+    setWaveformSelection(null);
     clearTimers();
     const beatMs = beatDurationMs(state.bpm);
     setState("countIn", { currentBeat: 1, status: "counting" });
@@ -161,6 +191,7 @@ export function BgmLoopRecorderScreen() {
       window.clearInterval(timerId);
       timers.delete(timerId);
       setState("countIn", "status", "recording");
+      setActiveRecording({ blockIndex, laneId });
       setBlocks(blockIndex, "lanes", laneId, "recording", true);
       setState("controlBar", { playing: true, stopped: false, beatLamp: 1 });
       startRecordingBeatClock(blockIndex);
@@ -169,19 +200,6 @@ export function BgmLoopRecorderScreen() {
       if (armedLane) {
         setBlocks(blockIndex, "lanes", armedLane, "playing", true);
       }
-
-      const finishTimer = window.setTimeout(() => {
-        const takes = blocks[blockIndex].lanes[laneId].takes;
-        clearTimers();
-        setBlocks(blockIndex, "lanes", laneId, "takes", [...takes, nextTakeId(laneId, takes.length)]);
-        setBlocks(blockIndex, "lanes", laneId, "recording", false);
-        setBlocks(blockIndex, "lanes", "top", "playing", false);
-        setBlocks(blockIndex, "lanes", "bottom", "playing", false);
-        setState("countIn", { currentBeat: 0, status: "idle" });
-        setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
-        setBlocks(blockIndex, "activeChord", 0);
-      }, beatMs * blocks[blockIndex].chords.length * 4);
-      timers.add(finishTimer);
     }, beatMs);
 
     timers.add(timerId);

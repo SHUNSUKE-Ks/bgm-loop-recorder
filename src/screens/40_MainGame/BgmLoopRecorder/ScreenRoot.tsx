@@ -1,5 +1,5 @@
 import { createStore, unwrap } from "solid-js/store";
-import { createSignal, For, onCleanup } from "solid-js";
+import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { ActiveStateFooter } from "../../../components/bgmLoopRecorder/ActiveStateFooter";
 import { BpmLampControlBar } from "../../../components/bgmLoopRecorder/BpmLampControlBar";
 import { CodeBlockRecorder } from "../../../components/bgmLoopRecorder/CodeBlockRecorder";
@@ -9,6 +9,7 @@ import { KeySignatureBar } from "../../../components/bgmLoopRecorder/KeySignatur
 import { WaveformEditPanel } from "../../../components/bgmLoopRecorder/WaveformEditPanel";
 import { createAudioRecorder } from "../../../hooks/useAudioRecorder";
 import { decodeAudioBlob, getAudioDuration } from "../../../utils/audioBuffer";
+import { deletePersistedTake, loadPersistedTakes, persistedToAudioTake, savePersistedTake, updatePersistedTakeTrim } from "../../../utils/soundDb";
 import { buildWaveformPeaks, detectSilenceTrimPercent } from "../../../utils/waveform";
 import type { SongOption } from "../../02_ChordSelect/ChordSelectScreen";
 import { beatDurationMs, initialScreen03State, nextTakeId } from "./screen03State";
@@ -86,6 +87,8 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
   const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
   const [activeRecording, setActiveRecording] = createSignal<ActiveRecording | null>(null);
+  const [waveformRepeat, setWaveformRepeat] = createSignal(false);
+  const [playheadPercent, setPlayheadPercent] = createSignal(0);
   const audioRecorder = createAudioRecorder();
   const audioPlayers = new Map<string, HTMLAudioElement>();
   const timers = new Set<number>();
@@ -93,6 +96,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   let playbackBeatStep = 0;
 
   const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
+  const progressionId = () => props.song.id;
   const scoreNotes = () => props.song.guitarTab?.suggestedNotes ?? noteAccidentalMap[state.key] ?? noteAccidentalMap.C;
 
   const clearTimers = () => {
@@ -131,11 +135,13 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     const trimEndSec = (selection.end / 100) * selection.durationSec;
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takeIndex, "trimStartSec", trimStartSec);
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takeIndex, "trimEndSec", trimEndSec);
+    void updatePersistedTakeTrim(selection.takeId, trimStartSec, trimEndSec);
   };
 
   const createTakeFromBlob = async (recording: ActiveRecording, blob: Blob): Promise<AudioTake> => {
-    const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
-    const takeId = nextTakeId(recording.laneId, takes.length);
+    const block = blocks[recording.blockIndex];
+    const takes = block.lanes[recording.laneId].takes;
+    const takeId = `${block.blockId}_${nextTakeId(recording.laneId, takes.length)}`;
     const objectUrl = URL.createObjectURL(blob);
     let durationSec = await getAudioDuration(blob);
     let waveformPeaks: number[] = [];
@@ -152,7 +158,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
 
     return {
       takeId,
-      blockId: blocks[recording.blockIndex].blockId,
+      blockId: block.blockId,
       laneId: recording.laneId,
       createdAt: Date.now(),
       blob,
@@ -185,6 +191,13 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
       createdTake = await createTakeFromBlob(recording, result.blob);
       const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
       setBlocks(recording.blockIndex, "lanes", recording.laneId, "takes", [...takes, createdTake]);
+      void savePersistedTake(
+        progressionId(),
+        recording.blockIndex,
+        blocks[recording.blockIndex].label,
+        blocks[recording.blockIndex].chords,
+        createdTake
+      );
     }
 
     setBlocks(recording.blockIndex, "lanes", recording.laneId, "recording", false);
@@ -313,7 +326,36 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     });
   };
 
-  const previewSelectedTake = () => {
+  const playTakeFromPosition = (blockIndex: number, laneId: LaneId, take: AudioTake, startPercent: number) => {
+    stopAudioPlayers();
+    const audio = new Audio(take.objectUrl);
+    audio.currentTime = (Math.max(0, Math.min(100, startPercent)) / 100) * take.durationSec;
+    audioPlayers.set(take.takeId, audio);
+
+    const progressTimer = window.setInterval(() => {
+      if (take.durationSec <= 0) return;
+      setPlayheadPercent(Math.min(100, (audio.currentTime / take.durationSec) * 100));
+    }, 120);
+    timers.add(progressTimer);
+
+    audio.addEventListener("ended", () => {
+      if (waveformRepeat()) {
+        audio.currentTime = 0;
+        setPlayheadPercent(0);
+        void audio.play();
+        return;
+      }
+      finishLanePlayback(blockIndex, laneId);
+      setPlayheadPercent(0);
+    });
+
+    void audio.play().catch((error) => {
+      console.error("audio start playback failed", error);
+      finishLanePlayback(blockIndex, laneId);
+    });
+  };
+
+  const playSelectedTakeFromStart = () => {
     const selection = waveformSelection();
     if (!selection) return;
     const take = findTake(selection.blockIndex, selection.laneId, selection.takeId);
@@ -327,7 +369,23 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
       }
     })));
     startBeatClock(selection.blockIndex);
-    playTakeAudio(selection.blockIndex, selection.laneId, take);
+    setPlayheadPercent(0);
+    playTakeFromPosition(selection.blockIndex, selection.laneId, take, 0);
+  };
+
+  const seekSelectedTake = (percent: number) => {
+    const safePercent = Math.max(0, Math.min(100, percent));
+    const selection = waveformSelection();
+    setPlayheadPercent(safePercent);
+    if (!selection) return;
+    const take = findTake(selection.blockIndex, selection.laneId, selection.takeId);
+    if (!take) return;
+    const audio = audioPlayers.get(take.takeId);
+    if (audio) {
+      audio.currentTime = (safePercent / 100) * take.durationSec;
+      return;
+    }
+    playTakeFromPosition(selection.blockIndex, selection.laneId, take, safePercent);
   };
 
   const playArmedTakeAudio = (blockIndex: number, laneId: LaneId) => {
@@ -473,6 +531,31 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     });
   };
 
+  onMount(() => {
+    void loadPersistedTakes(progressionId()).then((records) => {
+      if (records.length === 0) return;
+      const sortedRecords = [...records].sort((a, b) => a.blockIndex - b.blockIndex || a.createdAt - b.createdAt);
+      const maxBlockIndex = Math.max(...sortedRecords.map((record) => record.blockIndex));
+
+      setBlocks((items) => {
+        const nextBlocks = [...items.map((item) => structuredClone(unwrap(item)))];
+        for (let index = nextBlocks.length; index <= maxBlockIndex; index += 1) {
+          nextBlocks.push(createEmptyCodeBlock(nextBlocks[0], index));
+        }
+
+        sortedRecords.forEach((record) => {
+          const block = nextBlocks[record.blockIndex];
+          if (!block) return;
+          block.label = record.blockLabel;
+          block.chords = record.chords;
+          block.lanes[record.laneId].takes.push(persistedToAudioTake(record));
+        });
+
+        return nextBlocks;
+      });
+    }).catch((error) => console.error("sound db restore failed", error));
+  });
+
   const updateTrimStart = (value: number) => {
     const selection = waveformSelection();
     if (!selection) return;
@@ -512,6 +595,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     if (take) {
       URL.revokeObjectURL(take.objectUrl);
     }
+    void deletePersistedTake(selection.takeId);
     const takes = blocks[selection.blockIndex].lanes[selection.laneId].takes.filter((item) => item.takeId !== selection.takeId);
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takes);
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "playing", false);
@@ -583,7 +667,11 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
             <div class="wave-editor-overlay">
               <WaveformEditPanel
                 selection={waveformSelection()!}
-                onPreview={previewSelectedTake}
+                repeat={waveformRepeat()}
+                playheadPercent={playheadPercent()}
+                onPlayFromStart={playSelectedTakeFromStart}
+                onToggleRepeat={() => setWaveformRepeat(!waveformRepeat())}
+                onSeek={seekSelectedTake}
                 onTrimStartChange={updateTrimStart}
                 onTrimEndChange={updateTrimEnd}
                 onAutoTrimSilence={() => void autoTrimSilence()}

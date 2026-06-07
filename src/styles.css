@@ -577,9 +577,51 @@ button {
   accent-color: #0b8fff;
 }
 
+.wave-playback-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 56px;
+  gap: 8px;
+  align-items: center;
+  margin-top: 7px;
+}
+
+.wave-playback-row input {
+  width: 100%;
+  accent-color: #0b8fff;
+}
+
+.wave-start-button,
+.wave-repeat-button {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0b8fff;
+  font-size: 18px;
+  font-weight: 900;
+  padding: 2px 0;
+}
+
+.wave-repeat-button.active {
+  background: rgb(11 143 255 / 16%);
+}
+
+.wave-start-button span,
+.wave-repeat-button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .wave-editor-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin-top: 6px;
 }

@@ -13,7 +13,11 @@ type WaveformSelection = {
 
 type WaveformEditPanelProps = {
   selection: WaveformSelection;
-  onPreview: () => void;
+  repeat: boolean;
+  playheadPercent: number;
+  onPlayFromStart: () => void;
+  onToggleRepeat: () => void;
+  onSeek: (value: number) => void;
   onTrimStartChange: (value: number) => void;
   onTrimEndChange: (value: number) => void;
   onAutoTrimSilence: () => void;
@@ -76,8 +80,26 @@ export function WaveformEditPanel(props: WaveformEditPanelProps) {
           onInput={(event) => props.onTrimEndChange(Number(event.currentTarget.value))}
         />
       </div>
+      <div class="wave-playback-row">
+        <button type="button" class="wave-start-button" onClick={props.onPlayFromStart}>▶<span>始まりから</span></button>
+        <input
+          aria-label="再生位置"
+          type="range"
+          min="0"
+          max="100"
+          value={props.playheadPercent}
+          onInput={(event) => props.onSeek(Number(event.currentTarget.value))}
+        />
+        <button
+          type="button"
+          class="wave-repeat-button"
+          classList={{ active: props.repeat }}
+          onClick={props.onToggleRepeat}
+        >
+          ↻<span>{props.repeat ? "ON" : "OFF"}</span>
+        </button>
+      </div>
       <div class="wave-editor-actions">
-        <button type="button" onClick={props.onPreview}>▶<span>プレビュー</span></button>
         <button type="button" onClick={props.onAutoTrimSilence}>⇥<span>無音トリム</span></button>
         <button type="button" onClick={props.onDelete}>⌫<span>削除</span></button>
         <button type="button">✂<span>トリミング</span></button>

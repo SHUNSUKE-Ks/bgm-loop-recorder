@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { Match, Switch, createSignal } from "solid-js";
 import { ChordSelectScreen, type SongOption } from "./screens/02_ChordSelect/ChordSelectScreen";
 import { BgmLoopRecorderScreen } from "./screens/40_MainGame/BgmLoopRecorder/ScreenRoot";
 import { TitleScreen } from "./screens/10_Title/TitleScreen";
@@ -50,15 +50,17 @@ export default function App() {
     setScreen("score");
   };
 
-  const currentScreen = screen();
-
-  if (currentScreen === "title") {
-    return <TitleScreen onStart={() => setScreen("select")} />;
-  }
-
-  if (currentScreen === "select") {
-    return <ChordSelectScreen songs={songs} onSelect={openScore} />;
-  }
-
-  return <BgmLoopRecorderScreen song={selectedSong()} onBack={() => setScreen("select")} />;
+  return (
+    <Switch>
+      <Match when={screen() === "title"}>
+        <TitleScreen onStart={() => setScreen("select")} />
+      </Match>
+      <Match when={screen() === "select"}>
+        <ChordSelectScreen songs={songs} onSelect={openScore} />
+      </Match>
+      <Match when={screen() === "score"}>
+        <BgmLoopRecorderScreen song={selectedSong()} onBack={() => setScreen("select")} />
+      </Match>
+    </Switch>
+  );
 }

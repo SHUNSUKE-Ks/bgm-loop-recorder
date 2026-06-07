@@ -45,7 +45,7 @@ button {
 
 .title-logo-wrap {
   display: grid;
-  width: min(78vw, 330px);
+  width: min(84vw, 360px);
   aspect-ratio: 1;
   place-items: center;
 }

@@ -18,6 +18,7 @@ type WaveformEditPanelProps = {
   onTrimEndChange: (value: number) => void;
   onAutoTrimSilence: () => void;
   onDelete: () => void;
+  onClose: () => void;
 };
 
 export function WaveformEditPanel(props: WaveformEditPanelProps) {
@@ -39,6 +40,9 @@ export function WaveformEditPanel(props: WaveformEditPanelProps) {
 
   return (
     <section class="wave-editor" aria-label={`${props.selection.laneId} ${props.selection.takeId} 波形編集`}>
+      <button type="button" class="wave-editor-close" aria-label="トリミング画面を閉じる" title="閉じる" onClick={props.onClose}>
+        ×
+      </button>
       <div class="wave-editor-time">
         <span>{startLabel()}</span>
         <strong>{duration()}</strong>

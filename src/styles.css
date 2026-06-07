@@ -471,6 +471,7 @@ button {
 }
 
 .wave-editor {
+  position: relative;
   pointer-events: auto;
   border: 1px solid #334155;
   border-radius: 18px;
@@ -478,6 +479,23 @@ button {
   color: #0b8fff;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
   padding: 9px 10px 10px;
+}
+
+.wave-editor-close {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #0b0b0b;
+  color: #0b8fff;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .wave-editor-time {

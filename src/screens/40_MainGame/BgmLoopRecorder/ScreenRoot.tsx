@@ -313,6 +313,23 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     });
   };
 
+  const previewSelectedTake = () => {
+    const selection = waveformSelection();
+    if (!selection) return;
+    const take = findTake(selection.blockIndex, selection.laneId, selection.takeId);
+    if (!take) return;
+    setActiveBlockIndex(selection.blockIndex);
+    setBlocks((block) => block.map((item, index) => ({
+      ...item,
+      lanes: {
+        top: { ...item.lanes.top, playing: index === selection.blockIndex && selection.laneId === "top" },
+        bottom: { ...item.lanes.bottom, playing: index === selection.blockIndex && selection.laneId === "bottom" }
+      }
+    })));
+    startBeatClock(selection.blockIndex);
+    playTakeAudio(selection.blockIndex, selection.laneId, take);
+  };
+
   const playArmedTakeAudio = (blockIndex: number, laneId: LaneId) => {
     const take = findTake(blockIndex, laneId);
     if (!take) return;
@@ -566,11 +583,12 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
             <div class="wave-editor-overlay">
               <WaveformEditPanel
                 selection={waveformSelection()!}
-                onPreview={() => handlePlayLane(waveformSelection()!.blockIndex, waveformSelection()!.laneId)}
+                onPreview={previewSelectedTake}
                 onTrimStartChange={updateTrimStart}
                 onTrimEndChange={updateTrimEnd}
                 onAutoTrimSilence={() => void autoTrimSilence()}
                 onDelete={deleteSelectedTake}
+                onClose={() => setWaveformSelection(null)}
               />
             </div>
           )}

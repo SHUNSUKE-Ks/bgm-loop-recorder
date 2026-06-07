@@ -7,9 +7,12 @@ import { CountInOverlay } from "../../../components/bgmLoopRecorder/CountInOverl
 import { HeaderSongBar } from "../../../components/bgmLoopRecorder/HeaderSongBar";
 import { KeySignatureBar } from "../../../components/bgmLoopRecorder/KeySignatureBar";
 import { WaveformEditPanel } from "../../../components/bgmLoopRecorder/WaveformEditPanel";
+import { createAudioRecorder } from "../../../hooks/useAudioRecorder";
+import { decodeAudioBlob, getAudioDuration } from "../../../utils/audioBuffer";
+import { buildWaveformPeaks, detectSilenceTrimPercent } from "../../../utils/waveform";
 import type { SongOption } from "../../02_ChordSelect/ChordSelectScreen";
 import { beatDurationMs, initialScreen03State, nextTakeId } from "./screen03State";
-import type { LaneId, RecorderBlockState } from "./screen03Types";
+import type { AudioTake, LaneId, RecorderBlockState } from "./screen03Types";
 
 type WaveformSelection = {
   blockIndex: number;
@@ -17,6 +20,8 @@ type WaveformSelection = {
   takeId: string;
   start: number;
   end: number;
+  durationSec: number;
+  waveformPeaks: number[];
 };
 
 type ActiveRecording = {
@@ -81,6 +86,8 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   const [activeBlockIndex, setActiveBlockIndex] = createSignal(0);
   const [waveformSelection, setWaveformSelection] = createSignal<WaveformSelection | null>(null);
   const [activeRecording, setActiveRecording] = createSignal<ActiveRecording | null>(null);
+  const audioRecorder = createAudioRecorder();
+  const audioPlayers = new Map<string, HTMLAudioElement>();
   const timers = new Set<number>();
   let codeBlockStackRef: HTMLDivElement | undefined;
   let playbackBeatStep = 0;
@@ -94,27 +101,107 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     timers.clear();
   };
 
-  onCleanup(clearTimers);
+  const stopAudioPlayers = () => {
+    audioPlayers.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    audioPlayers.clear();
+  };
 
-  const finishActiveRecording = () => {
+  const findTake = (blockIndex: number, laneId: LaneId, takeId?: string) => {
+    const takes = blocks[blockIndex]?.lanes[laneId].takes ?? [];
+    return takeId ? takes.find((take) => take.takeId === takeId) : takes[0];
+  };
+
+  const toWaveformSelection = (blockIndex: number, laneId: LaneId, take: AudioTake): WaveformSelection => ({
+    blockIndex,
+    laneId,
+    takeId: take.takeId,
+    start: take.durationSec > 0 ? Math.round((take.trimStartSec / take.durationSec) * 100) : 0,
+    end: take.durationSec > 0 ? Math.round((take.trimEndSec / take.durationSec) * 100) : 100,
+    durationSec: take.durationSec,
+    waveformPeaks: take.waveformPeaks
+  });
+
+  const updateTakeTrim = (selection: WaveformSelection) => {
+    const takeIndex = blocks[selection.blockIndex].lanes[selection.laneId].takes.findIndex((take) => take.takeId === selection.takeId);
+    if (takeIndex < 0) return;
+    const trimStartSec = (selection.start / 100) * selection.durationSec;
+    const trimEndSec = (selection.end / 100) * selection.durationSec;
+    setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takeIndex, "trimStartSec", trimStartSec);
+    setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takeIndex, "trimEndSec", trimEndSec);
+  };
+
+  const createTakeFromBlob = async (recording: ActiveRecording, blob: Blob): Promise<AudioTake> => {
+    const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
+    const takeId = nextTakeId(recording.laneId, takes.length);
+    const objectUrl = URL.createObjectURL(blob);
+    let durationSec = await getAudioDuration(blob);
+    let waveformPeaks: number[] = [];
+
+    try {
+      const audioBuffer = await decodeAudioBlob(blob);
+      durationSec = audioBuffer.duration;
+      waveformPeaks = buildWaveformPeaks(audioBuffer);
+    } catch {
+      waveformPeaks = [];
+    }
+
+    const safeDuration = Math.max(0.1, durationSec || 0.1);
+
+    return {
+      takeId,
+      blockId: blocks[recording.blockIndex].blockId,
+      laneId: recording.laneId,
+      createdAt: Date.now(),
+      blob,
+      objectUrl,
+      durationSec: safeDuration,
+      trimStartSec: 0,
+      trimEndSec: safeDuration,
+      waveformPeaks
+    };
+  };
+
+  onCleanup(() => {
+    clearTimers();
+    stopAudioPlayers();
+    audioRecorder.cancelRecording();
+    blocks.forEach((block) => {
+      block.lanes.top.takes.forEach((take) => URL.revokeObjectURL(take.objectUrl));
+      block.lanes.bottom.takes.forEach((take) => URL.revokeObjectURL(take.objectUrl));
+    });
+  });
+
+  const finishActiveRecording = async () => {
     const recording = activeRecording();
     if (!recording) return;
 
-    const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
-    const takeId = nextTakeId(recording.laneId, takes.length);
-    setBlocks(recording.blockIndex, "lanes", recording.laneId, "takes", [...takes, takeId]);
+    const result = await audioRecorder.stopRecording();
+    let createdTake: AudioTake | null = null;
+
+    if (result?.blob && result.blob.size > 0) {
+      createdTake = await createTakeFromBlob(recording, result.blob);
+      const takes = blocks[recording.blockIndex].lanes[recording.laneId].takes;
+      setBlocks(recording.blockIndex, "lanes", recording.laneId, "takes", [...takes, createdTake]);
+    }
+
     setBlocks(recording.blockIndex, "lanes", recording.laneId, "recording", false);
     setBlocks(recording.blockIndex, "lanes", "top", "playing", false);
     setBlocks(recording.blockIndex, "lanes", "bottom", "playing", false);
     setBlocks(recording.blockIndex, "activeChord", 0);
-    setWaveformSelection({ blockIndex: recording.blockIndex, laneId: recording.laneId, takeId, start: 0, end: 100 });
+    if (createdTake) {
+      setWaveformSelection(toWaveformSelection(recording.blockIndex, recording.laneId, createdTake));
+    }
     setActiveRecording(null);
   };
 
-  const stopAll = () => {
+  const stopAll = async () => {
     const wasRecording = activeRecording() !== null;
-    finishActiveRecording();
+    await finishActiveRecording();
     clearTimers();
+    stopAudioPlayers();
     setState("countIn", { currentBeat: 0, status: "idle" });
     setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
     if (!wasRecording) {
@@ -167,7 +254,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
       const nextChord = Math.floor((sequenceBeat % blockSpan) / 4);
 
       if (!state.controlBar.repeat && playbackBeatStep >= totalSpan) {
-        stopAll();
+        void stopAll();
         return;
       }
 
@@ -198,17 +285,55 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
 
   const handleAllPlay = () => {
     if (state.controlBar.playing) {
-      stopAll();
+      void stopAll();
       return;
     }
     startSequenceBeatClock();
   };
 
+  const finishLanePlayback = (blockIndex: number, laneId: LaneId) => {
+    setBlocks(blockIndex, "lanes", laneId, "playing", false);
+    setState("controlBar", { playing: false, stopped: true, beatLamp: 1 });
+    clearTimers();
+    stopAudioPlayers();
+  };
+
+  const playTakeAudio = (blockIndex: number, laneId: LaneId, take: AudioTake) => {
+    stopAudioPlayers();
+    const audio = new Audio(take.objectUrl);
+    audio.currentTime = take.trimStartSec;
+    audioPlayers.set(take.takeId, audio);
+    const playMs = Math.max(100, (take.trimEndSec - take.trimStartSec) * 1000);
+    const timerId = window.setTimeout(() => finishLanePlayback(blockIndex, laneId), playMs);
+    timers.add(timerId);
+    audio.addEventListener("ended", () => finishLanePlayback(blockIndex, laneId), { once: true });
+    void audio.play().catch((error) => {
+      console.error("audio preview failed", error);
+      finishLanePlayback(blockIndex, laneId);
+    });
+  };
+
+  const playArmedTakeAudio = (blockIndex: number, laneId: LaneId) => {
+    const take = findTake(blockIndex, laneId);
+    if (!take) return;
+    const audio = new Audio(take.objectUrl);
+    audio.currentTime = take.trimStartSec;
+    audio.addEventListener("timeupdate", () => {
+      if (audio.currentTime >= take.trimEndSec) {
+        audio.currentTime = take.trimStartSec;
+        void audio.play();
+      }
+    });
+    audioPlayers.set(`${take.takeId}_armed`, audio);
+    void audio.play().catch((error) => console.error("armed audio playback failed", error));
+  };
+
   const handlePlayLane = (blockIndex: number, laneId: LaneId) => {
     setActiveBlockIndex(blockIndex);
     const nextPlaying = !blocks[blockIndex].lanes[laneId].playing;
-    const takeId = blocks[blockIndex].lanes[laneId].takes[0];
-    setWaveformSelection(nextPlaying && takeId ? { blockIndex, laneId, takeId, start: 0, end: 100 } : null);
+    const take = findTake(blockIndex, laneId);
+    if (nextPlaying && !take) return;
+    setWaveformSelection(nextPlaying && take ? toWaveformSelection(blockIndex, laneId, take) : null);
     setBlocks((block) => block.map((item, index) => ({
       ...item,
       lanes: {
@@ -218,14 +343,15 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     })));
     if (nextPlaying) {
       startBeatClock(blockIndex);
+      playTakeAudio(blockIndex, laneId, take!);
     } else {
-      stopAll();
+      void stopAll();
     }
   };
 
   const handleRec = (blockIndex: number, laneId: LaneId) => {
     if (state.countIn.status === "recording") {
-      stopAll();
+      void stopAll();
       return;
     }
     if (state.countIn.status !== "idle") return;
@@ -249,16 +375,22 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
 
       window.clearInterval(timerId);
       timers.delete(timerId);
-      setState("countIn", "status", "recording");
-      setActiveRecording({ blockIndex, laneId });
-      setBlocks(blockIndex, "lanes", laneId, "recording", true);
-      setState("controlBar", { playing: true, stopped: false, beatLamp: 1 });
-      startRecordingBeatClock(blockIndex);
+      void audioRecorder.startRecording().then(() => {
+        setState("countIn", "status", "recording");
+        setActiveRecording({ blockIndex, laneId });
+        setBlocks(blockIndex, "lanes", laneId, "recording", true);
+        setState("controlBar", { playing: true, stopped: false, beatLamp: 1 });
+        startRecordingBeatClock(blockIndex);
 
-      const armedLane = blocks[blockIndex].overdubTarget;
-      if (armedLane) {
-        setBlocks(blockIndex, "lanes", armedLane, "playing", true);
-      }
+        const armedLane = blocks[blockIndex].overdubTarget;
+        if (armedLane) {
+          setBlocks(blockIndex, "lanes", armedLane, "playing", true);
+          playArmedTakeAudio(blockIndex, armedLane);
+        }
+      }).catch((error) => {
+        console.error("recording start failed", error);
+        void stopAll();
+      });
     }, beatMs);
 
     timers.add(timerId);
@@ -281,7 +413,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     const wasPlaying = state.controlBar.playing && state.countIn.status === "idle";
     setState("bpm", bpm);
     if (state.countIn.status !== "idle") {
-      stopAll();
+      void stopAll();
       return;
     }
     if (wasPlaying) {
@@ -327,25 +459,43 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   const updateTrimStart = (value: number) => {
     const selection = waveformSelection();
     if (!selection) return;
-    setWaveformSelection({ ...selection, start: Math.min(value, selection.end - 5) });
+    const nextSelection = { ...selection, start: Math.min(value, selection.end - 5) };
+    setWaveformSelection(nextSelection);
+    updateTakeTrim(nextSelection);
   };
 
   const updateTrimEnd = (value: number) => {
     const selection = waveformSelection();
     if (!selection) return;
-    setWaveformSelection({ ...selection, end: Math.max(value, selection.start + 5) });
+    const nextSelection = { ...selection, end: Math.max(value, selection.start + 5) };
+    setWaveformSelection(nextSelection);
+    updateTakeTrim(nextSelection);
   };
 
-  const autoTrimSilence = () => {
+  const autoTrimSilence = async () => {
     const selection = waveformSelection();
     if (!selection) return;
-    setWaveformSelection({ ...selection, start: 8, end: 92 });
+    const take = findTake(selection.blockIndex, selection.laneId, selection.takeId);
+    if (!take) return;
+    try {
+      const audioBuffer = await decodeAudioBlob(take.blob);
+      const trim = detectSilenceTrimPercent(audioBuffer);
+      const nextSelection = { ...selection, start: Math.min(trim.start, trim.end - 5), end: Math.max(trim.end, trim.start + 5) };
+      setWaveformSelection(nextSelection);
+      updateTakeTrim(nextSelection);
+    } catch (error) {
+      console.error("auto trim failed", error);
+    }
   };
 
   const deleteSelectedTake = () => {
     const selection = waveformSelection();
     if (!selection) return;
-    const takes = blocks[selection.blockIndex].lanes[selection.laneId].takes.filter((takeId) => takeId !== selection.takeId);
+    const take = findTake(selection.blockIndex, selection.laneId, selection.takeId);
+    if (take) {
+      URL.revokeObjectURL(take.objectUrl);
+    }
+    const takes = blocks[selection.blockIndex].lanes[selection.laneId].takes.filter((item) => item.takeId !== selection.takeId);
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "takes", takes);
     setBlocks(selection.blockIndex, "lanes", selection.laneId, "playing", false);
     setWaveformSelection(null);
@@ -370,7 +520,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
             playing={state.controlBar.playing}
             onToggleRepeat={() => setState("controlBar", "repeat", !state.controlBar.repeat)}
             onAllPlay={handleAllPlay}
-            onStop={stopAll}
+            onStop={() => void stopAll()}
           />
           <KeySignatureBar
             keyName={state.key}
@@ -405,7 +555,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
             activeLane={activeBlock().overdubTarget}
             status={state.countIn.status}
             beat={state.countIn.currentBeat || state.controlBar.beatLamp}
-            onSave={() => console.info("mock save", structuredClone(state))}
+            onSave={() => console.info("mock save", unwrap(state))}
           />
           <CountInOverlay
             status={state.countIn.status}
@@ -419,7 +569,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
                 onPreview={() => handlePlayLane(waveformSelection()!.blockIndex, waveformSelection()!.laneId)}
                 onTrimStartChange={updateTrimStart}
                 onTrimEndChange={updateTrimEnd}
-                onAutoTrimSilence={autoTrimSilence}
+                onAutoTrimSilence={() => void autoTrimSilence()}
                 onDelete={deleteSelectedTake}
               />
             </div>

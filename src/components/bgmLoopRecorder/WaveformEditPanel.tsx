@@ -7,6 +7,8 @@ type WaveformSelection = {
   takeId: string;
   start: number;
   end: number;
+  durationSec: number;
+  waveformPeaks: number[];
 };
 
 type WaveformEditPanelProps = {
@@ -20,28 +22,33 @@ type WaveformEditPanelProps = {
 
 export function WaveformEditPanel(props: WaveformEditPanelProps) {
   const bars = () => {
-    const seed = props.selection.takeId.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return Array.from({ length: 72 }, (_, index) => {
-      const wave = Math.abs(Math.sin((index + seed) * 0.52));
-      return 8 + Math.round(wave * 34);
-    });
+    const peaks = props.selection.waveformPeaks.length > 0 ? props.selection.waveformPeaks : [0];
+    return peaks.map((peak) => 8 + Math.round(Math.min(1, peak) * 42));
   };
 
-  const duration = "00:04.54";
-  const startLabel = () => `00:0${Math.floor((props.selection.start / 100) * 4)}.${String(Math.floor((props.selection.start % 20) * 5)).padStart(2, "0")}`;
+  const formatTime = (seconds: number) => {
+    const safeSeconds = Math.max(0, seconds);
+    const minutes = Math.floor(safeSeconds / 60);
+    const rest = safeSeconds - minutes * 60;
+    return `${String(minutes).padStart(2, "0")}:${rest.toFixed(2).padStart(5, "0")}`;
+  };
+
+  const startLabel = () => formatTime((props.selection.start / 100) * props.selection.durationSec);
+  const endLabel = () => formatTime((props.selection.end / 100) * props.selection.durationSec);
+  const duration = () => formatTime(props.selection.durationSec);
 
   return (
     <section class="wave-editor" aria-label={`${props.selection.laneId} ${props.selection.takeId} 波形編集`}>
       <div class="wave-editor-time">
         <span>{startLabel()}</span>
-        <strong>{duration}</strong>
-        <span>{duration}</span>
+        <strong>{duration()}</strong>
+        <span>{endLabel()}</span>
       </div>
       <div class="waveform-area">
         <div class="trim-window" style={{ left: `${props.selection.start}%`, right: `${100 - props.selection.end}%` }} />
         <For each={bars()}>
           {(height, index) => (
-            <span class="wave-bar" style={{ height: `${height}px`, left: `${(index() / 71) * 100}%` }} />
+            <span class="wave-bar" style={{ height: `${height}px`, left: `${(index() / Math.max(1, bars().length - 1)) * 100}%` }} />
           )}
         </For>
         <span class="trim-handle start" style={{ left: `${props.selection.start}%` }} />

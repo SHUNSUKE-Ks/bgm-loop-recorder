@@ -24,12 +24,13 @@ export function RecLaneRow(props: RecLaneRowProps) {
       </button>
       <div class="lane-wave">
         <For each={props.lane.takes}>
-          {(takeId) => (
+          {(take) => (
             <RecordedTakeIcon
-              takeId={takeId}
+              takeId={take.takeId}
+              durationSec={take.durationSec}
               armed={props.lane.armedPlayback}
               onClick={() => props.onPlayLane(props.laneId)}
-              onLongPress={() => props.onToggleTakeArmed(props.laneId, takeId)}
+              onLongPress={() => props.onToggleTakeArmed(props.laneId, take.takeId)}
             />
           )}
         </For>

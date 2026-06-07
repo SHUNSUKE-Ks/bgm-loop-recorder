@@ -1,6 +1,19 @@
 export type LaneId = "top" | "bottom";
 export type CountInStatus = "idle" | "counting" | "recording";
 
+export type AudioTake = {
+  takeId: string;
+  blockId: string;
+  laneId: LaneId;
+  createdAt: number;
+  blob: Blob;
+  objectUrl: string;
+  durationSec: number;
+  trimStartSec: number;
+  trimEndSec: number;
+  waveformPeaks: number[];
+};
+
 export type CountInState = {
   enabled: boolean;
   beats: 4;
@@ -33,7 +46,7 @@ export type RecLaneState = {
   recording: boolean;
   playing: boolean;
   armedPlayback: boolean;
-  takes: string[];
+  takes: AudioTake[];
 };
 
 export type RecorderBlockState = {

@@ -39,7 +39,7 @@
         "recording": false,
         "playing": false,
         "armedPlayback": true,
-        "takes": ["take_top_001", "take_top_002"]
+        "takes": []
       },
       "bottom": {
         "id": "bottom",
@@ -47,7 +47,7 @@
         "recording": false,
         "playing": false,
         "armedPlayback": false,
-        "takes": ["take_bottom_001"]
+        "takes": []
       }
     }
   }

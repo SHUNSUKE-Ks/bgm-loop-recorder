@@ -1,5 +1,6 @@
 type RecordedTakeIconProps = {
   takeId: string;
+  durationSec: number;
   armed: boolean;
   muted?: boolean;
   onClick: () => void;
@@ -44,7 +45,7 @@ export function RecordedTakeIcon(props: RecordedTakeIconProps) {
       onPointerLeave={clearPress}
       onPointerCancel={clearPress}
     >
-      ▶
+      {Math.max(1, Math.round(props.durationSec))}
     </button>
   );
 }

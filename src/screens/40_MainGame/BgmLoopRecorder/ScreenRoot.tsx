@@ -1,4 +1,4 @@
-import { createStore } from "solid-js/store";
+import { createStore, unwrap } from "solid-js/store";
 import { createSignal, For, onCleanup } from "solid-js";
 import { ActiveStateFooter } from "../../../components/bgmLoopRecorder/ActiveStateFooter";
 import { BpmLampControlBar } from "../../../components/bgmLoopRecorder/BpmLampControlBar";
@@ -286,11 +286,11 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     setState("availableNotes", "notes", noteAccidentalMap[keyName] ?? noteAccidentalMap.C);
   };
 
-  const handleAddCodeBlock = () => {
-    const nextIndex = blocks.length;
-    const block = structuredClone(blocks[0]);
-    block.blockId = `codeblock_${String(nextIndex + 1).padStart(3, "0")}`;
-    block.label = `A${nextIndex + 1}`;
+  const createEmptyCodeBlock = (baseBlock: RecorderBlockState, index: number): RecorderBlockState => {
+    const nextNumber = index + 1;
+    const block = structuredClone(unwrap(baseBlock));
+    block.blockId = `codeblock_${String(nextNumber).padStart(3, "0")}`;
+    block.label = `A${nextNumber}`;
     block.activeChord = 0;
     block.overdubTarget = "top";
     block.lanes.top.recording = false;
@@ -301,7 +301,12 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
     block.lanes.bottom.playing = false;
     block.lanes.bottom.armedPlayback = false;
     block.lanes.bottom.takes = [];
-    setBlocks((items) => [...items, block]);
+    return block;
+  };
+
+  const handleAddCodeBlock = () => {
+    const nextIndex = blocks.length;
+    setBlocks((items) => [...items, createEmptyCodeBlock(items[0], nextIndex)]);
     setActiveBlockIndex(nextIndex);
     requestAnimationFrame(() => {
       if (!codeBlockStackRef) return;

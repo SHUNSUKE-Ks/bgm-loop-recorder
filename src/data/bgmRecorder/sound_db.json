@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.1.0",
+  "databaseId": "sound_db",
+  "description": "Central SoundDB schema for recorded loop takes. Runtime Blob data will be attached in memory first, then persisted with IndexedDB/Dexie later.",
+  "storagePlan": {
+    "phase1": "memory",
+    "phase2": "indexedDB",
+    "recommendedPackage": "dexie"
+  },
+  "soundTypes": [
+    { "id": "sound_recording_take", "label": "録音Take", "description": "コードブロック上段/下段で録音した音声" },
+    { "id": "sound_preview_mix", "label": "Preview Mix", "description": "確認用に一時生成するMix" },
+    { "id": "sound_export_loop", "label": "Export Loop", "description": "完成後に書き出すLoop音源" }
+  ],
+  "takeSchema": {
+    "takeId": "string",
+    "projectId": "string",
+    "progressionId": "string",
+    "blockId": "string",
+    "laneId": "top | bottom",
+    "role": "arpeggio | melody | backing | memo",
+    "createdAt": "number",
+    "durationSec": "number",
+    "trimStartSec": "number",
+    "trimEndSec": "number",
+    "bpm": "number",
+    "key": "string",
+    "chords": "string[]",
+    "moodTags": "string[]",
+    "blobRef": "string",
+    "waveformPeaks": "number[]"
+  },
+  "takes": []
+}

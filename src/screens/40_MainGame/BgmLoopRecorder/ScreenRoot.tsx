@@ -35,7 +35,12 @@ const noteAccidentalMap: Record<string, string[]> = {
   Bb: ["B♭", "Cm", "Dm", "E♭", "F", "Gm", "Am"],
   Eb: ["E♭", "Fm", "Gm", "A♭", "B♭", "Cm", "Dm"],
   Ab: ["A♭", "B♭m", "Cm", "D♭", "E♭", "Fm", "Gm"],
-  Db: ["D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m", "Cm"]
+  Db: ["D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m", "Cm"],
+  "A minor": ["Am", "Bm", "C", "Dm", "Em", "F", "G"],
+  "E minor": ["Em", "F♯m", "G", "Am", "Bm", "C", "D"],
+  "D Dorian": ["Dm", "Em", "F", "G", "Am", "Bm", "C"],
+  "E Phrygian": ["Em", "F", "G", "Am", "Bm", "C", "Dm"],
+  "C Lydian": ["C", "D", "Em", "F♯m", "G", "Am", "Bm"]
 };
 
 const keySignatureDisplayMap: Record<string, { clef: "treble"; accidentals: string[]; display: string }> = {
@@ -49,7 +54,12 @@ const keySignatureDisplayMap: Record<string, { clef: "treble"; accidentals: stri
   Bb: { clef: "treble", accidentals: ["Bb", "Eb"], display: "Bb, Eb" },
   Eb: { clef: "treble", accidentals: ["Bb", "Eb", "Ab"], display: "Bb, Eb, Ab" },
   Ab: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db"], display: "Bb, Eb, Ab, Db" },
-  Db: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db", "Gb"], display: "Bb, Eb, Ab, Db, Gb" }
+  Db: { clef: "treble", accidentals: ["Bb", "Eb", "Ab", "Db", "Gb"], display: "Bb, Eb, Ab, Db, Gb" },
+  "A minor": { clef: "treble", accidentals: [], display: "A minor" },
+  "E minor": { clef: "treble", accidentals: ["F#"], display: "F#" },
+  "D Dorian": { clef: "treble", accidentals: [], display: "D Dorian" },
+  "E Phrygian": { clef: "treble", accidentals: [], display: "E Phrygian" },
+  "C Lydian": { clef: "treble", accidentals: ["F#"], display: "F#" }
 };
 
 type BgmLoopRecorderScreenProps = {
@@ -76,7 +86,7 @@ export function BgmLoopRecorderScreen(props: BgmLoopRecorderScreenProps) {
   let playbackBeatStep = 0;
 
   const activeBlock = () => blocks[activeBlockIndex()] ?? blocks[0];
-  const scoreNotes = () => noteAccidentalMap[state.key] ?? noteAccidentalMap.C;
+  const scoreNotes = () => props.song.guitarTab?.suggestedNotes ?? noteAccidentalMap[state.key] ?? noteAccidentalMap.C;
 
   const clearTimers = () => {
     timers.forEach((timerId) => window.clearInterval(timerId));

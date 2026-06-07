@@ -3,9 +3,18 @@ import { For, createSignal } from "solid-js";
 export type SongOption = {
   id: string;
   title: string;
+  scene?: string;
   bpm: number;
   key: string;
   chords: string[];
+  moodTags?: string[];
+  sceneTags?: string[];
+  loopRole?: string;
+  guitarTab?: {
+    upper: string;
+    lower: string;
+    suggestedNotes: string[];
+  };
   colorA: string;
   colorB: string;
 };
@@ -55,6 +64,7 @@ export function ChordSelectScreen(props: ChordSelectScreenProps) {
                     <span class="song-cover large" style={{ "--cover-a": song.colorA, "--cover-b": song.colorB }} />
                     <strong>{song.title}</strong>
                     <span>{song.key} / {song.chords.join(" - ")}</span>
+                    <span>{song.moodTags?.join(" / ")}</span>
                   </button>
                 )}
               </For>
@@ -68,6 +78,7 @@ export function ChordSelectScreen(props: ChordSelectScreenProps) {
                     <span class="song-list-text">
                       <strong>{song.title}</strong>
                       <span>Key:{song.key} / {song.chords.join(" - ")}</span>
+                      <span>{song.moodTags?.join(" / ")}</span>
                     </span>
                     <span class="song-menu-dot">⋮</span>
                   </button>

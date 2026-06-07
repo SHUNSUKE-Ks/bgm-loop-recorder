@@ -1,5 +1,6 @@
 type TitleScreenProps = {
   onStart: () => void;
+  onCollection: () => void;
 };
 
 export function TitleScreen(props: TitleScreenProps) {
@@ -13,6 +14,9 @@ export function TitleScreen(props: TitleScreenProps) {
           <div class="title-content">
             <button type="button" onClick={props.onStart}>
               はじまり
+            </button>
+            <button type="button" class="title-secondary-button" onClick={props.onCollection}>
+              Collection
             </button>
           </div>
         </section>

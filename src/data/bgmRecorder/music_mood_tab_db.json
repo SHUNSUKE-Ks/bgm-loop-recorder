@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.1.0",
+  "databaseId": "music_mood_tab_db",
+  "description": "Mood tabs for choosing game BGM chord progressions by scene.",
+  "moods": [
+    { "id": "mood_prayer", "label": "祈り", "sceneUse": "教会、回復地点、祈りの場面", "energy": 2 },
+    { "id": "mood_gentle", "label": "優しい", "sceneUse": "町、会話、安心する場面", "energy": 2 },
+    { "id": "mood_hope", "label": "希望", "sceneUse": "旅立ち、解放、光が差す場面", "energy": 3 },
+    { "id": "mood_resolve", "label": "決意", "sceneUse": "出発前、覚悟、夜明け前", "energy": 4 },
+    { "id": "mood_mystic", "label": "神秘", "sceneUse": "森、遺跡、魔法、未知の場所", "energy": 3 },
+    { "id": "mood_nostalgia", "label": "懐かしい", "sceneUse": "回想、古い部屋、昔の記憶", "energy": 2 },
+    { "id": "mood_sad", "label": "悲しい", "sceneUse": "喪失、記憶、会話の沈黙", "energy": 2 },
+    { "id": "mood_mystery", "label": "謎", "sceneUse": "探索、真相、不穏な情報", "energy": 3 },
+    { "id": "mood_tension", "label": "緊張", "sceneUse": "危険、発見、戦闘前", "energy": 4 },
+    { "id": "mood_battle", "label": "戦闘", "sceneUse": "小規模戦闘、内面戦、追跡", "energy": 5 },
+    { "id": "mood_silence", "label": "静寂", "sceneUse": "夜、宿屋、余白のある場面", "energy": 1 },
+    { "id": "mood_farewell", "label": "別れ", "sceneUse": "港、手紙、最後の会話", "energy": 2 }
+  ]
+}

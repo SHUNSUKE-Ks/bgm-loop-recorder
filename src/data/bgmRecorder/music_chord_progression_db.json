@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "0.1.0",
+  "databaseId": "music_chord_progression_db",
+  "description": "Game BGM oriented chord progression dictionary for Nion recorder scenes.",
+  "progressions": [
+    {
+      "id": "prog_church_prayer_001",
+      "title": "教会の祈り",
+      "scene": "祈り / 聖堂 / 回復地点",
+      "key": "C",
+      "bpm": 120,
+      "chords": ["Dm7", "G", "C", "Am"],
+      "moodTags": ["祈り", "優しい", "静寂"],
+      "sceneTags": ["church", "save_point", "healing"],
+      "loopRole": "上段アルペジオ、下段は短い祈りのメロディ",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["C", "D", "E", "F", "G", "A", "B"]
+      },
+      "colorA": "#dbeafe",
+      "colorB": "#fef3c7"
+    },
+    {
+      "id": "prog_after_rain_alley_001",
+      "title": "雨上がりの路地",
+      "scene": "町 / 探索 / 少し明るい余韻",
+      "key": "F",
+      "bpm": 92,
+      "chords": ["F", "Gm", "C", "Dm"],
+      "moodTags": ["優しい", "懐かしい", "希望"],
+      "sceneTags": ["town", "after_rain", "walk"],
+      "loopRole": "上段は柔らかい分散和音、下段は単音の返答フレーズ",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["F", "G", "A", "B♭", "C", "D", "E"]
+      },
+      "colorA": "#0f172a",
+      "colorB": "#38bdf8"
+    },
+    {
+      "id": "prog_sky_light_001",
+      "title": "空に伸びる光",
+      "scene": "希望 / 出発 / 空が開ける場面",
+      "key": "G",
+      "bpm": 138,
+      "chords": ["G", "D", "Em", "C"],
+      "moodTags": ["希望", "決意"],
+      "sceneTags": ["journey", "sky", "opening"],
+      "loopRole": "上段は明るい8分アルペジオ、下段は上昇する主題",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["G", "A", "B", "C", "D", "E", "F♯"]
+      },
+      "colorA": "#818cf8",
+      "colorB": "#f0abfc"
+    },
+    {
+      "id": "prog_before_dawn_001",
+      "title": "夜明け前の決意",
+      "scene": "決意 / 前夜 / 旅立ち前",
+      "key": "D",
+      "bpm": 112,
+      "chords": ["Bm", "G", "D", "A"],
+      "moodTags": ["決意", "悲しい", "希望"],
+      "sceneTags": ["resolve", "dawn", "departure"],
+      "loopRole": "上段は低めのアルペジオ、下段は抑えたメロディ",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["D", "E", "F♯", "G", "A", "B", "C♯"]
+      },
+      "colorA": "#312e81",
+      "colorB": "#fb7185"
+    },
+    {
+      "id": "prog_witch_forest_001",
+      "title": "魔女の森",
+      "scene": "森 / 魔女 / 不思議な迷い道",
+      "key": "D Dorian",
+      "bpm": 104,
+      "chords": ["Dm", "G", "Dm", "C"],
+      "moodTags": ["神秘", "謎", "緊張"],
+      "sceneTags": ["forest", "witch", "mystery"],
+      "loopRole": "上段はDを軸にした反復、下段は短い問いかけの旋律",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["D", "E", "F", "G", "A", "B", "C"]
+      },
+      "colorA": "#064e3b",
+      "colorB": "#a7f3d0"
+    },
+    {
+      "id": "prog_lost_memory_001",
+      "title": "失われた記憶",
+      "scene": "回想 / 記憶 / 少し切ない会話",
+      "key": "A minor",
+      "bpm": 84,
+      "chords": ["Am", "F", "C", "G"],
+      "moodTags": ["懐かしい", "悲しい", "優しい"],
+      "sceneTags": ["memory", "flashback", "dialogue"],
+      "loopRole": "上段はゆっくりした分散、下段は余白のある旋律",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["A", "B", "C", "D", "E", "F", "G"]
+      },
+      "colorA": "#581c87",
+      "colorB": "#f5d0fe"
+    },
+    {
+      "id": "prog_hidden_truth_001",
+      "title": "隠された真実",
+      "scene": "謎解き / 真相 / 不穏な発見",
+      "key": "E Phrygian",
+      "bpm": 96,
+      "chords": ["Em", "F", "Em", "Dm"],
+      "moodTags": ["謎", "緊張", "神秘"],
+      "sceneTags": ["truth", "secret", "investigation"],
+      "loopRole": "上段は半音感を残す反復、下段は低く短いメロディ",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["E", "F", "G", "A", "B", "C", "D"]
+      },
+      "colorA": "#111827",
+      "colorB": "#f97316"
+    },
+    {
+      "id": "prog_ruin_light_001",
+      "title": "遺跡に差す光",
+      "scene": "遺跡 / 発見 / 古い光",
+      "key": "C Lydian",
+      "bpm": 100,
+      "chords": ["C", "D", "Em", "D"],
+      "moodTags": ["神秘", "希望", "静寂"],
+      "sceneTags": ["ruins", "ancient", "light"],
+      "loopRole": "上段は浮遊感のあるアルペジオ、下段は高めの反復動機",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["C", "D", "E", "F♯", "G", "A", "B"]
+      },
+      "colorA": "#164e63",
+      "colorB": "#fde68a"
+    },
+    {
+      "id": "prog_small_village_night_001",
+      "title": "小さな村の夜",
+      "scene": "村 / 夜 / 宿屋",
+      "key": "G",
+      "bpm": 76,
+      "chords": ["G", "C", "D", "G"],
+      "moodTags": ["静寂", "優しい", "懐かしい"],
+      "sceneTags": ["village", "night", "inn"],
+      "loopRole": "上段は遅いアルペジオ、下段は少ない音数で呼吸を作る",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["G", "A", "B", "C", "D", "E", "F♯"]
+      },
+      "colorA": "#172554",
+      "colorB": "#93c5fd"
+    },
+    {
+      "id": "prog_farewell_port_001",
+      "title": "別れの港",
+      "scene": "別れ / 港 / 手紙",
+      "key": "A minor",
+      "bpm": 88,
+      "chords": ["Am", "G", "F", "E"],
+      "moodTags": ["別れ", "悲しい", "決意"],
+      "sceneTags": ["farewell", "port", "letter"],
+      "loopRole": "上段は下降するアルペジオ、下段は最後だけ強く残す旋律",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["A", "B", "C", "D", "E", "F", "G♯"]
+      },
+      "colorA": "#1e293b",
+      "colorB": "#fca5a5"
+    },
+    {
+      "id": "prog_battle_memory_001",
+      "title": "記憶の戦い",
+      "scene": "戦闘 / 内面 / 追憶",
+      "key": "E minor",
+      "bpm": 132,
+      "chords": ["Em", "C", "D", "Bm"],
+      "moodTags": ["戦闘", "緊張", "悲しい"],
+      "sceneTags": ["battle", "memory", "inner_conflict"],
+      "loopRole": "上段は16分寄りの緊張アルペジオ、下段は短い主題を反復",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["E", "F♯", "G", "A", "B", "C", "D"]
+      },
+      "colorA": "#7f1d1d",
+      "colorB": "#f59e0b"
+    },
+    {
+      "id": "prog_old_novel_room_001",
+      "title": "古い部屋のノベル",
+      "scene": "部屋 / 会話 / 古いNovelGame",
+      "key": "C",
+      "bpm": 86,
+      "chords": ["C", "Em", "F", "G"],
+      "moodTags": ["懐かしい", "優しい", "静寂"],
+      "sceneTags": ["novel_game", "room", "dialogue"],
+      "loopRole": "上段は静かな分散、下段は2小節ごとに短く返す",
+      "guitarTab": {
+        "upper": "arpeggio",
+        "lower": "melody",
+        "suggestedNotes": ["C", "D", "E", "F", "G", "A", "B"]
+      },
+      "colorA": "#334155",
+      "colorB": "#f8fafc"
+    }
+  ]
+}

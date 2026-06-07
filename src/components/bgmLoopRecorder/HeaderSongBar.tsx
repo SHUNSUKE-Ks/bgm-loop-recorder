@@ -11,7 +11,7 @@ type HeaderSongBarProps = {
 
 export function HeaderSongBar(props: HeaderSongBarProps) {
   const [settingsOpen, setSettingsOpen] = createSignal(false);
-  const keyOptions = ["C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db"];
+  const keyOptions = ["C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db", "A minor", "E minor", "D Dorian", "E Phrygian", "C Lydian"];
   const clampBpm = (value: number) => Math.min(220, Math.max(40, Math.round(value || 40)));
 
   return (
